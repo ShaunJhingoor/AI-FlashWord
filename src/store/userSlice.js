@@ -1,18 +1,20 @@
 "use client";
 import { createSlice } from "@reduxjs/toolkit";
 
-export const userSlice = createSlice({
+export const usersSlice = createSlice({
     name:'user',
-    initialState:{ uid: '', email: '', flashcards: []},
+    initialState:{
+        currentUser: null,
+    },
     reducers: {
         setUser: (user, action) => {
             // console.log('setUser', action.payload)
-            user = action.payload
+            user.currentUser = action.payload
         }
     }
 })
 
-export const {setUser} = userSlice.actions
+export const {setUser} = usersSlice.actions
 export const selectUser = state => state?.user
 
-export default userSlice.reducer
+export default usersSlice.reducer
