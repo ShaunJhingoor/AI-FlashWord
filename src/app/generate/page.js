@@ -16,12 +16,18 @@ import {
   DialogContentText,
   Grid,
   CardActionArea,
-  Card
+  Card,
 } from "@mui/material";
 import { selectUser } from "../../store/userSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
-import { doc, collection, setDoc, getDoc, writeBatch } from "firebase/firestore";
+import {
+  doc,
+  collection,
+  setDoc,
+  getDoc,
+  writeBatch,
+} from "firebase/firestore";
 import { firestore } from "../../firebase/config";
 
 const GenerateComponent = () => {
@@ -68,13 +74,10 @@ const GenerateComponent = () => {
     const batch = writeBatch(firestore);
     const userDocRef = doc(collection(firestore, "Users"), user.currentUser.id);
     const docSnap = await getDoc(userDocRef);
-    console.log(user.uid)
 
     if (docSnap.exists()) {
-      const collections = docSnap.data().collections || []; // Ensure collections is an array if undefined
-      const collectionExists = collections.find((f) => f.name === name);
-
-      if (collectionExists) {
+      const collections = docSnap.data().flashcards || []; // Ensure collections is an array if undefined
+      if (collections.find((f) => f.name === name)) {
         alert("Name already exists");
         return;
       } else {
@@ -187,11 +190,11 @@ const GenerateComponent = () => {
               </Grid>
             ))}
           </Grid>
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
             <Button variant="contained" color="secondary" onClick={handleOpen}>
               Save Flashcards
-              </Button>
-            </Box>
+            </Button>
+          </Box>
         </Box>
       )}
       <Dialog open={open} onClose={handleClose}>
