@@ -1,10 +1,10 @@
 // src/context/AuthContext.js
 "use client";
-import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase/config'; 
-import { useDispatch } from 'react-redux';
-import { setUser } from '../store/userSlice';
+import { createContext, useContext, useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase/config";
+import { useDispatch } from "react-redux";
+import { setUser } from "../store/userSlice";
 
 const AuthContext = createContext();
 
@@ -26,14 +26,14 @@ export function AuthProvider({ children }) {
   }, [dispatch]);
 
   if (loading) {
-    return <div id='loaderconter'><div className='loader'></div></div>;
+    return (
+      <div id="loaderconter">
+        <div className="loader"></div>
+      </div>
+    );
   }
 
-  return (
-    <AuthContext.Provider value={{}}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{}}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
