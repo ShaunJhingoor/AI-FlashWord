@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   TextField,
   Button,
@@ -20,9 +20,9 @@ import {
 } from "@mui/material";
 import { selectUser } from "../../store/userSlice";
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter } from "next/router";
-import { writeBatch } from "firebase/firestore";
-import { firebase } from "../../firebase/config";
+import { useRouter } from "next/navigation";
+import { doc, collection, setDoc, getDoc, writeBatch } from "firebase/firestore";
+import { firestore } from "../../firebase/config";
 
 const GenerateComponent = () => {
   const user = useSelector(selectUser);
@@ -31,7 +31,7 @@ const GenerateComponent = () => {
   const [text, setText] = useState("");
   const [name, setName] = useState("");
   const [open, setOpen] = useState(false);
-  const router = useRouter;
+  const router = useRouter();
 
   const [inputValue, setInputValue] = useState("");
 
@@ -65,9 +65,10 @@ const GenerateComponent = () => {
       return;
     }
 
-    const batch = writeBatch(firebase);
-    const userDocRef = doc(collection(firebase, "users"), user.id);
+    const batch = writeBatch(firestore);
+    const userDocRef = doc(collection(firestore, "Users"), user.currentUser.id);
     const docSnap = await getDoc(userDocRef);
+    console.log(user.uid)
 
     if (docSnap.exists()) {
       const collections = docSnap.data().collections || []; // Ensure collections is an array if undefined
