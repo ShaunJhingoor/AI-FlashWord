@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import LoginPage from "./Components/login";
 import SignUpPage from "./Components/signUp";
 import { selectUser } from "../store/userSlice";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { signOut } from "firebase/auth";
-import { useDispatch } from "react-redux";
 import { auth } from "../firebase/config"; // Ensure this import is correct
 
 function LandingPage() {
@@ -49,10 +48,10 @@ function LandingPage() {
     <div className="bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 w-screen h-screen m-0 p-0 flex flex-col items-center justify-center">
       {user.currentUser ? (
         <div className="flex flex-col items-center">
+          <h1 className="text-4xl mb-4 font-bold text-white">
+            Welcome, {user.currentUser.email}!
+          </h1>
           <div className="bg-gradient-to-r from-teal-400 via-blue-500 to-indigo-600 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center relative overflow-hidden">
-            {/* <h1 className="text-4xl mb-4 font-bold text-white">
-              Welcome, {user.currentUser.email}!
-            </h1> */}
             <div>
               {Object.keys(flashcards).map((flashcard, i) => {
                 return (
@@ -65,13 +64,13 @@ function LandingPage() {
                 );
               })}
             </div>
-            {/* <button
+          </div>
+          <button
               onClick={handleSignOut}
               className="py-2 px-6 text-white bg-red-600 rounded-lg transition-transform transform hover:scale-105"
             >
               Sign Out
-            </button> */}
-          </div>
+            </button>
         </div>
       ) : (
         <div className="flex flex-col items-center">
