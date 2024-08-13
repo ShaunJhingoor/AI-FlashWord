@@ -276,8 +276,8 @@ const DecksPage = () => {
 
 
   return (
-    <Container maxWidth="md" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'linear-gradient(to right, #ff9a9e, #fad0c4)', minHeight: '100vh', minWidth: '100vw', padding: '20px' }}>
-      <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4, color: '#333', fontWeight: 'bold' }}>
+    <Container maxWidth="md" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'linear-gradient(to right, #f472b6, #a855f7, #3b82f6)', minHeight: '100vh', minWidth: '100vw', padding: '20px' }}>
+      <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4, color: '#333', fontWeight: 'bold', color: 'white' }}>
         Flashcard Decks
       </Typography>
 
