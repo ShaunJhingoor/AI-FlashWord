@@ -136,7 +136,6 @@ const DecksPage = () => {
           Add Deck
         </Button>
       </Box>
-
       {/* Listing Decks */}
       <List sx={{ width: '100%', maxWidth: '600px' }}>
         {decks.map((deck) => (
