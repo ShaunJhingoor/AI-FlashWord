@@ -6,10 +6,10 @@ You are a flashcard creator, you take in text and create multiple flashcards fro
 Both front and back should be one sentence long.
 You should return in the following JSON format:
 {
-  "flashcards":[
+  "flashcards": [
     {
-      "font": str,
-      "back": str
+      "question": "front text",
+      "answer": "back text"
     }
   ]
 }
