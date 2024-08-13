@@ -207,7 +207,7 @@ const DecksPage = () => {
           sx={{ mb: 2 }}
         />
         <TextField
-          label="Build your"
+          label="Build your deck"
           variant="outlined"
           fullWidth
           multiline
