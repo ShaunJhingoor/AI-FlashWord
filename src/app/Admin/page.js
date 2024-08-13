@@ -11,6 +11,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CloseIcon from '@mui/icons-material/Close';
+import * as pdfjsLib from 'pdfjs-dist/webpack.mjs'
 
 const DecksPage = () => {
   const [decks, setDecks] = useState([]);
@@ -23,8 +24,13 @@ const DecksPage = () => {
   const [currentDeck, setCurrentDeck] = useState(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [flashcards,setFlashcards] = useState([]);
+  const [file, setFile] = useState(null);
+  const [extractedText, setExtractedText] = useState('');
+  const [fileName, setFileName] = useState('')
   const currentUser = useSelector(selectUser);
-  const [flashcards,setFlashcards] = useState([])
+  
+  
 
   const fetchDecks = async () => {
     try {
@@ -184,11 +190,94 @@ const DecksPage = () => {
       alert("Failed to generate or add flashcards.");
     }
   };
+
+  const handleFileChange = (e) => {
+    e.preventDefault()
+    if (e.target.files.length > 0) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+    }
+    // console.log(selectedFile)
+  };
+
+  const extractTextFromPDF = async (pdf) => {
+    const numPages = pdf.numPages;
+    let text = '';
+
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      text += `${pageText}\n`;
+    }
+
+    return text;
+  };
+
+  const handleFileSubmit = async (e) => {
+    e.preventDefault()
+    if (file) {
+      try {
+        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+        const text = await extractTextFromPDF(pdf);
+        setExtractedText(text)
+        setFileName(file.name.split(".pdf")[0])
+
+      } catch (error) {
+        console.error('Error extracting text from PDF:', error);
+      }
+    } else{
+      alert("No File Selected")
+    }
+  };
+
+  useEffect(() => {
+    if (extractedText && fileName) {
+      handleFileSubmitAI()
+      .then(() => {
+        // Clear extractedText and fileName after processing
+        setExtractedText('');
+        setFileName('');
+        setFile(null)
+      })
+      .catch((error) => {
+        console.error('Error during file processing:', error);
+      });
+    }
+  }, [extractedText, fileName]);
+
+  const handleFileSubmitAI = async () => {
+    if (!extractedText || !fileName) {
+      alert("Extracted text or file name is missing.");
+      return;
+    }
+    try {
+      const response = await fetch("api/generate", {
+        method: "POST",
+        body: extractedText,
+      });
   
+      if (!response.ok) {
+        throw new Error("Failed to fetch flashcards.");
+      }
+  
+      const data = await response.json();
+  
+      if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
+        await addFlashcardDeck(fileName, JSON.stringify(data)); 
+      } else {
+        alert("Invalid flashcards format received.");
+      }
+    } catch (error) {
+      console.error("Error handling submit:", error);
+      alert("Failed to generate or add flashcards.");
+    } 
+  };
+
 
   return (
-    <Container maxWidth="md" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'linear-gradient(to right, #ff9a9e, #fad0c4)', minHeight: '100vh', minWidth: '100vw', padding: '20px' }}>
-      <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4, color: '#333', fontWeight: 'bold' }}>
+    <Container maxWidth="md" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'linear-gradient(to right, #f472b6, #a855f7, #3b82f6)', minHeight: '100vh', minWidth: '100vw', padding: '20px' }}>
+      <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4, color: '#333', fontWeight: 'bold', color: 'white' }}>
         Flashcard Decks
       </Typography>
 
@@ -224,6 +313,25 @@ const DecksPage = () => {
           sx={{ mt: 2, borderRadius: 2, boxShadow: 2 }}
         >
           Add Deck
+        </Button>
+      </Box>
+
+      <Box mb={4} p={3} borderRadius={2} boxShadow={3} bgcolor="background.paper" sx={{ maxWidth: '600px', background: 'linear-gradient(to right, #ffffff, #f9f9f9)' }}>
+        <Typography variant="h6" gutterBottom>
+          Upload PDF to Generate Deck
+        </Typography>
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={(e) => handleFileChange(e)}
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={(e) => handleFileSubmit(e)}
+          sx={{ mt: 2 }}
+        >
+          Generate Deck from PDF
         </Button>
       </Box>
 
@@ -266,7 +374,7 @@ const DecksPage = () => {
             label="Deck Name"
             variant="outlined"
             fullWidth
-            value={editDeckName}
+            value={file}
             onChange={(e) => setEditDeckName(e.target.value)}
             margin="normal"
           />
@@ -388,6 +496,10 @@ const DecksPage = () => {
             backgroundColor: '#fff',
             borderRadius: '50%',
             boxShadow: 1,
+            '&:hover': {
+              boxShadow: 3,
+              backgroundColor: '#fff' // Adjust the shadow intensity as needed
+            },
           }}
         >
           <ArrowBackIosIcon />
@@ -403,6 +515,10 @@ const DecksPage = () => {
             backgroundColor: '#fff',
             borderRadius: '50%',
             boxShadow: 1,
+            '&:hover': {
+              boxShadow: 3,
+              backgroundColor: '#fff' 
+            },
           }}
         >
           <ArrowForwardIosIcon />
