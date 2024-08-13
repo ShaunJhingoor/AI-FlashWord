@@ -64,16 +64,18 @@ const DecksPage = () => {
   };
 
   const handleEdit = (deck) => {
+    setCurrentDeck(deck);
     setEditDeckName(deck.id);
     setEditDeckContent(deck.content.map(item => `Question: ${item.question}\nAnswer: ${item.answer}`).join('\n\n')); 
     setIsEditing(true);
+    console.log(currentDeck)
   };
 
   const handleSave = async () => {
+    console.log(currentDeck)
     try {
       const userCollectionRef = collection(firestore, 'Users', currentUser?.currentUser.id, 'flashcards');
-      const docRef = doc(userCollectionRef, editDeckName);
-  
+      
       // Split the content into an array of question-answer pairs
       const formattedContent = editDeckContent.split('\n\n').map(item => {
         const lines = item.split('\n').map(line => line.trim()); // Trim each line
@@ -91,8 +93,21 @@ const DecksPage = () => {
         return { question, answer };
       }).filter(item => item !== null); // Remove null entries
   
-      // Update the deck in Firestore
-      await setDoc(docRef, { content: formattedContent });
+      // If the deck name has changed
+      if (editDeckName !== currentDeck?.id) {
+        // 1. Delete the old deck
+        const oldDocRef = doc(userCollectionRef, currentDeck?.id);
+        await deleteDoc(oldDocRef);
+  
+        // 2. Create the new deck with the new name
+        const newDocRef = doc(userCollectionRef, editDeckName);
+        await setDoc(newDocRef, { content: formattedContent });
+      } else {
+        // Update the existing deck with the same name
+        const docRef = doc(userCollectionRef, editDeckName);
+        await setDoc(docRef, { content: formattedContent });
+      }
+  
       alert("Deck updated successfully!");
       setIsEditing(false);
       setEditDeckName('');
