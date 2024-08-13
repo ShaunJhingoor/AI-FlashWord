@@ -8,6 +8,9 @@ import { useSelector } from 'react-redux';
 import { selectUser } from '../../store/userSlice';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import CloseIcon from '@mui/icons-material/Close';
 
 const DecksPage = () => {
   const [decks, setDecks] = useState([]);
@@ -16,8 +19,12 @@ const DecksPage = () => {
   const [editDeckName, setEditDeckName] = useState('');
   const [editDeckContent, setEditDeckContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentDeck, setCurrentDeck] = useState(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
   const currentUser = useSelector(selectUser);
+  const [flashcards,setFlashcards] = useState([])
 
   const fetchDecks = async () => {
     try {
@@ -66,13 +73,25 @@ const DecksPage = () => {
     try {
       const userCollectionRef = collection(firestore, 'Users', currentUser?.currentUser.id, 'flashcards');
       const docRef = doc(userCollectionRef, editDeckName);
+  
+      // Split the content into an array of question-answer pairs
       const formattedContent = editDeckContent.split('\n\n').map(item => {
-        const [question, answer] = item.split('\n');
-        return {
-          question: question.replace('Question: ', ''),
-          answer: answer.replace('Answer: ', '')
-        };
-      });
+        const lines = item.split('\n').map(line => line.trim()); // Trim each line
+        if (lines.length < 2) {
+          // Skip items with less than 2 lines (invalid entries)
+          return null;
+        }
+        // Extract question and answer
+        const question = lines[0].replace('Question: ', '').trim();
+        const answer = lines[1].replace('Answer: ', '').trim();
+        // Ensure both question and answer are non-empty
+        if (!question || !answer) {
+          return null; // Skip entries with empty question or answer
+        }
+        return { question, answer };
+      }).filter(item => item !== null); // Remove null entries
+  
+      // Update the deck in Firestore
       await setDoc(docRef, { content: formattedContent });
       alert("Deck updated successfully!");
       setIsEditing(false);
@@ -81,8 +100,11 @@ const DecksPage = () => {
       fetchDecks(); 
     } catch (error) {
       console.error("Error updating deck:", error);
+      alert("Failed to update deck. Please check the content format.");
     }
   };
+  
+
 
   const handleDelete = async (deckName) => {
     try {
@@ -96,8 +118,61 @@ const DecksPage = () => {
     }
   };
 
+  const handleDeckClick = (deck) => {
+    setCurrentDeck(deck);
+    setCurrentCardIndex(0);
+    setIsModalOpen(true);
+    setIsFlipped(false);
+  };
+
+  const handleCardFlip = () => {
+    setIsFlipped(!isFlipped);
+  };
+
+  const handleNextCard = () => {
+    if (currentCardIndex < currentDeck.content.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1);
+      setIsFlipped(false);
+    }
+  };
+
+  const handlePrevCard = () => {
+    if (currentCardIndex > 0) {
+      setCurrentCardIndex(currentCardIndex - 1);
+      setIsFlipped(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const response = await fetch("api/generate", {
+        method: "POST",
+        body: deckContent,
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to fetch flashcards.");
+      }
+  
+      const data = await response.json();
+  
+      // Check if flashcards data is in expected format
+      if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
+        setFlashcards(data);
+        await addFlashcardDeck(deckName, JSON.stringify(data)); 
+      } else {
+        alert("Invalid flashcards format received.");
+      }
+    } catch (error) {
+      console.error("Error handling submit:", error);
+      alert("Failed to generate or add flashcards.");
+    }
+  };
+  
+
   return (
-    <Container maxWidth="md" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'linear-gradient(to right, #ff9a9e, #fad0c4)', minHeight: '100vh', minWidth: '100vw'}}>
+    <Container maxWidth="md" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'linear-gradient(to right, #ff9a9e, #fad0c4)', minHeight: '100vh', minWidth: '100vw', padding: '20px' }}>
       <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4, color: '#333', fontWeight: 'bold' }}>
         Flashcard Decks
       </Typography>
@@ -117,7 +192,7 @@ const DecksPage = () => {
           sx={{ mb: 2 }}
         />
         <TextField
-          label="Deck Content (JSON)"
+          label="Build your"
           variant="outlined"
           fullWidth
           multiline
@@ -130,7 +205,7 @@ const DecksPage = () => {
           variant="contained"
           color="primary"
           fullWidth
-          onClick={() => addFlashcardDeck(deckName, deckContent)}
+          onClick={(e) => handleSubmit(e)}
           sx={{ mt: 2, borderRadius: 2, boxShadow: 2 }}
         >
           Add Deck
@@ -138,30 +213,32 @@ const DecksPage = () => {
       </Box>
 
       {/* Listing Decks */}
-      <List sx={{ width: '100%', maxWidth: '600px' }}>
+      <List sx={{ width: '100%', maxWidth: '15rem' }}>
         {decks.map((deck) => (
-          <ListItem key={deck.id} sx={{ mb: 2, border: '1px solid #ddd', borderRadius: 2, p: 2, background: '#f9f9f9', boxShadow: 1 }}>
+          <ListItem key={deck.id} sx={{ mb: 2, border: '1px solid #ddd', borderRadius: 2, background: '#f9f9f9', boxShadow: 1 }}>
             <ListItemText
               primary={
-                <Box>
-                  <Typography variant="subtitle1" component="div" fontWeight="bold">Deck: {deck.id}</Typography>
-                  {deck.content.map((item, index) => (
-                    <Box key={index} mt={1} sx={{ border: '1px solid #ddd', borderRadius: 2, p: 2, background: '#ffffff', boxShadow: 1 }}>
-                      <Typography variant="body2" fontWeight="bold">Question:</Typography>
-                      <Typography variant="body2" sx={{ mb: 1 }}>{item.question}</Typography>
-                      <Typography variant="body2" fontWeight="bold">Answer:</Typography>
-                      <Typography variant="body2">{item.answer}</Typography>
-                    </Box>
-                  ))}
+                <Box textAlign="center">
+                  <Typography
+                    variant="subtitle1"
+                    component="div"
+                    fontWeight="bold"
+                    onClick={() => handleDeckClick(deck)}
+                    sx={{ cursor: 'pointer', textDecoration: 'underline', color: '#1976d2' }}
+                  >
+                    {deck.id}
+                  </Typography>
+                  <Box display="flex" justifyContent="center" mt={1}>
+                    <IconButton onClick={() => handleEdit(deck)} sx={{ color: '#1976d2'}}>
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(deck.id)} sx={{ color: '#d32f2f' }}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
                 </Box>
               }
             />
-            <IconButton onClick={() => handleEdit(deck)} sx={{ color: '#1976d2' }}>
-              <EditIcon />
-            </IconButton>
-            <IconButton onClick={() => handleDelete(deck.id)} sx={{ color: '#d32f2f' }}>
-              <DeleteIcon />
-            </IconButton>
           </ListItem>
         ))}
       </List>
@@ -194,6 +271,130 @@ const DecksPage = () => {
           <Button onClick={handleSave} color="primary">Save Changes</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Flashcard Modal */}
+      <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="md" fullWidth sx={{
+      backgroundColor: 'transparent',
+     '.MuiPaper-root': {
+      backgroundColor: '#FAC9BF',
+        },
+      }}>
+      <DialogTitle 
+        sx={{ 
+          textAlign: 'center', 
+          fontWeight: 'bold', 
+          position: 'relative',
+          color: 'white',
+          fontSize: '3rem'
+        }}
+      >
+        {currentDeck && currentDeck.id}
+        <IconButton
+          onClick={() => setIsModalOpen(false)}
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            color: '#d32f2f'
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent sx={{ textAlign: 'center', backgroundColor: 'inherit', p: 0 }}>
+        <Box
+          sx={{
+            perspective: '1000px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            height: '30vh',
+            width: '70%',
+            transformStyle: 'preserve-3d',
+            transition: 'transform 0.6s',
+            transform: isFlipped ? 'rotateY(180deg)' : 'none',
+            marginBottom: "2rem",
+          }}
+          onClick={handleCardFlip}
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              height: '100%',
+              width: '100%',
+              backfaceVisibility: 'hidden',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              fontSize: '2rem',
+              padding: '10px',
+              backgroundColor: '#fff',
+              borderRadius: '10px',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+              transform: isFlipped ? 'rotateY(180deg)' : 'none'
+            }}
+          >
+            {currentDeck && currentDeck.content[currentCardIndex].question}
+          </Box>
+          <Box
+            sx={{
+              position: 'absolute',
+              height: '100%',
+              width: '100%',
+              backfaceVisibility: 'hidden',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              fontSize: '2rem',
+              padding: '10px',
+              backgroundColor: '#fff',
+              borderRadius: '10px',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+              transform: 'rotateY(180deg)'
+            }}
+          >
+            {currentDeck && currentDeck.content[currentCardIndex].answer}
+          </Box>
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={{ justifyContent: 'center', padding: 0 }}>
+        <IconButton
+          onClick={handlePrevCard}
+          disabled={currentCardIndex === 0}
+          sx={{
+            position: 'absolute',
+            left: 0,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            backgroundColor: '#fff',
+            borderRadius: '50%',
+            boxShadow: 1,
+          }}
+        >
+          <ArrowBackIosIcon />
+        </IconButton>
+        <IconButton
+          onClick={handleNextCard}
+          disabled={!currentDeck || currentCardIndex === currentDeck.content.length - 1}
+          sx={{
+            position: 'absolute',
+            right: 0,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            backgroundColor: '#fff',
+            borderRadius: '50%',
+            boxShadow: 1,
+          }}
+        >
+          <ArrowForwardIosIcon />
+        </IconButton>
+      </DialogActions>
+    </Dialog>
+
     </Container>
   );
 };
