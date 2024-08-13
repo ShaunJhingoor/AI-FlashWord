@@ -11,7 +11,7 @@ import { auth } from "../firebase/config"; // Ensure this import is correct
 function LandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
-  const user = useSelector(selectUser);
+  const user = useSelector(selectUser)
   const dispatch = useDispatch();
   console.log(user);
 
@@ -41,7 +41,7 @@ function LandingPage() {
 
   return (
     <div className="bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 w-screen h-screen m-0 p-0 flex flex-col items-center justify-center">
-      {user.currentUser ? (
+      {user?.currentUser ? (
         <div className="flex flex-col items-center">
           <h1 className="text-4xl mb-4 font-bold text-white">
             Welcome, {user.currentUser.email}!
