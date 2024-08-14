@@ -71,7 +71,8 @@ const DecksPage = () => {
 
   const handleEdit = (deck) => {
     setCurrentDeck(deck);
-    setEditDeckName(deck.id);
+    
+    setEditDeckName(deck?.id);
     setEditDeckContent(deck.content.map(item => `Question: ${item.question}\nAnswer: ${item.answer}`).join('\n\n')); 
     setIsEditing(true);
     console.log(currentDeck)
@@ -290,7 +291,6 @@ const DecksPage = () => {
           label="Deck Name"
           variant="outlined"
           fullWidth
-          value={deckName}
           onChange={(e) => setDeckName(e.target.value)}
           margin="normal"
           sx={{ mb: 2 }}
@@ -374,7 +374,7 @@ const DecksPage = () => {
             label="Deck Name"
             variant="outlined"
             fullWidth
-            value={file}
+            value={editDeckName}
             onChange={(e) => setEditDeckName(e.target.value)}
             margin="normal"
           />
