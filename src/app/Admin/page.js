@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Container, Typography, Button, TextField, List, ListItem, ListItemText, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, Box } from '@mui/material';
+import React, { useState, useEffect, useRef } from 'react';
+import { Container, Typography, Button, TextField, List, ListItem, ListItemText, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, Box, Grid } from '@mui/material';
 import { collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '../../firebase/config';
 import { useSelector } from 'react-redux';
@@ -24,10 +24,10 @@ const DecksPage = () => {
   const [currentDeck, setCurrentDeck] = useState(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [flashcards,setFlashcards] = useState([]);
   const [file, setFile] = useState(null);
   const [extractedText, setExtractedText] = useState('');
   const [fileName, setFileName] = useState('')
+  const fileInputRef = useRef(null)
   const currentUser = useSelector(selectUser);
   
   
@@ -181,7 +181,6 @@ const DecksPage = () => {
   
       // Check if flashcards data is in expected format
       if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
-        setFlashcards(data);
         await addFlashcardDeck(deckName, JSON.stringify(data)); 
       } else {
         alert("Invalid flashcards format received.");
@@ -197,6 +196,7 @@ const DecksPage = () => {
     if (e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
+      setFileName(selectedFile.name.split(".pdf")[0])
     }
     // console.log(selectedFile)
   };
@@ -222,7 +222,6 @@ const DecksPage = () => {
         const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
         const text = await extractTextFromPDF(pdf);
         setExtractedText(text)
-        setFileName(file.name.split(".pdf")[0])
 
       } catch (error) {
         console.error('Error extracting text from PDF:', error);
@@ -272,7 +271,15 @@ const DecksPage = () => {
     } catch (error) {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
-    } 
+    } finally {
+      // Clear the file input field after processing
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+    setExtractedText('');
+    setFileName('');
+    setFile(null);
   };
 
 
@@ -324,6 +331,7 @@ const DecksPage = () => {
           type="file"
           accept=".pdf"
           onChange={(e) => handleFileChange(e)}
+          ref={fileInputRef}
         />
         <Button
           variant="contained"
@@ -336,35 +344,65 @@ const DecksPage = () => {
       </Box>
 
       {/* Listing Decks */}
-      <List sx={{ width: '100%', maxWidth: '15rem' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: '100%' }}>
+      <Grid container spacing={1} justifyContent="center">
         {decks.map((deck) => (
-          <ListItem key={deck.id} sx={{ mb: 2, border: '1px solid #ddd', borderRadius: 2, background: '#f9f9f9', boxShadow: 1 }}>
-            <ListItemText
-              primary={
-                <Box textAlign="center">
-                  <Typography
-                    variant="subtitle1"
-                    component="div"
-                    fontWeight="bold"
-                    onClick={() => handleDeckClick(deck)}
-                    sx={{ cursor: 'pointer', textDecoration: 'underline', color: '#1976d2' }}
-                  >
-                    {deck.id}
-                  </Typography>
-                  <Box display="flex" justifyContent="center" mt={1}>
-                    <IconButton onClick={() => handleEdit(deck)} sx={{ color: '#1976d2'}}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(deck.id)} sx={{ color: '#d32f2f' }}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
-              }
-            />
-          </ListItem>
+          <Grid item xs={12} sm={6} md={4} key={deck.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Box
+               sx={{
+                border: '1px solid #ccc', // Lighter border for a cleaner look
+                borderRadius: 0.5, // Slightly rounded corners
+                background: '#fafafa', // Slightly off-white background for a paper effect
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)', // Subtle shadow to mimic paper lift
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '30rem',
+                height: '15rem',
+                transition: 'box-shadow 0.3s, transform 0.3s', // Smooth transition for hover effects
+                marginTop: "2rem",
+                marginBottom: "2rem",
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', // Slightly stronger shadow on hover
+                  transform: 'scale(1.01)', // Slightly enlarge the box on hover
+                },
+              }}
+            >
+              <Typography
+                 variant="subtitle1"
+                 component="div"
+                 fontWeight="bold"
+                 onClick={() => handleDeckClick(deck)}
+                 fontSize="2rem"
+                 sx={{ 
+                   cursor: 'pointer', 
+                   textDecoration: 'underline', 
+                   color: '#1976d2', 
+                   mb: 1,
+                   transition: 'color 0.3s', // Smooth transition for hover effect
+                   '&:hover': {
+                     color: '#1565c0', // Darker color on hover
+                   },
+                 }}
+              >
+                {deck.id}
+              </Typography>
+              <Box display="flex" justifyContent="center" mb={1}>
+                <IconButton onClick={() => handleEdit(deck)} sx={{ color: '#1976d2', mr: 1, fontSize: "2rem"}}>
+                  <EditIcon />
+                </IconButton>
+                <IconButton onClick={() => handleDelete(deck.id)} sx={{ color: '#d32f2f' }}>
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          </Grid>
         ))}
-      </List>
+      </Grid>
+    </Box>
+
 
       {/* Edit Deck Modal */}
       <Dialog open={isEditing} onClose={() => setIsEditing(false)} maxWidth="sm" fullWidth>
