@@ -7,12 +7,14 @@ import { selectUser } from "../store/userSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/config"; // Ensure this import is correct
+import { useRouter } from "next/navigation";
 
 function LandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const user = useSelector(selectUser)
   const dispatch = useDispatch();
+  const router = useRouter()
   console.log(user);
 
   const openModal = (type) => {
@@ -34,6 +36,10 @@ function LandingPage() {
     }
   };
 
+  const handleGoGenerate = () => {
+    router.push("/generate");
+  }
+
   const handleSubmit = async () => {
     const checkoutSession = await fetch("/api/checkout", {});
   }
@@ -46,6 +52,14 @@ function LandingPage() {
           <h1 className="text-4xl mb-4 font-bold text-white">
             Welcome, {user.currentUser.email}!
           </h1>
+          <div className="bg-gradient-to-r from-teal-400 via-blue-500 to-indigo-600 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center relative overflow-hidden">
+            <div className="flex flex-col text-white">
+              <h1 className="font-bold text-[4vh]">Generate</h1>
+                <div className="flex flex-col gap-[1vh]">
+                  <button onClick={handleGoGenerate} className="bg-[#d64040] p-[2vh] rounded-full">go</button>
+                </div>
+            </div>
+          </div>
           <div className="bg-gradient-to-r from-teal-400 via-blue-500 to-indigo-600 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center relative overflow-hidden">
             <div className="flex flex-col text-white">
               <h1 className="font-bold text-[4vh]">Pricing</h1>

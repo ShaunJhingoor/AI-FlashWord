@@ -8,6 +8,8 @@ import { useSelector } from 'react-redux';
 import { selectUser } from '../../store/userSlice';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useRouter, usePathname } from "next/navigation";
+import Route from "../Components/route";
 
 const DecksPage = () => {
   const [decks, setDecks] = useState([]);
@@ -18,6 +20,8 @@ const DecksPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const currentUser = useSelector(selectUser);
+  const pathname = usePathname();
+  const router = useRouter();
 
   const fetchDecks = async () => {
     try {
@@ -97,6 +101,9 @@ const DecksPage = () => {
   };
 
   return (
+    <>
+          <Route current={pathname} />
+
     <Container maxWidth="md" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'linear-gradient(to right, #ff9a9e, #fad0c4)', minHeight: '100vh', minWidth: '100vw'}}>
       <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4, color: '#333', fontWeight: 'bold' }}>
         Flashcard Decks
@@ -195,6 +202,8 @@ const DecksPage = () => {
         </DialogActions>
       </Dialog>
     </Container>
+    </>
+
   );
 };
 

@@ -8,8 +8,8 @@ You should return in the following JSON format:
 {
   "flashcards":[
     {
-      "font": str,
-      "back": str
+      "answer": str,
+      "question": str
     }
   ]
 }
