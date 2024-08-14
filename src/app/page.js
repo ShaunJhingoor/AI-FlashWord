@@ -7,14 +7,18 @@ import { selectUser } from "../store/userSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/config"; // Ensure this import is correct
-import getStripe from "../../utils/get-stripe";
+// import getStripe from "../../utils/get-stripe";
+import { getCheckoutUrl, getPortalUrl } from "./account/stripePayment";
+import { useRouter } from "next/navigation";
+import { getPremiumStatus } from "./account/PremiumStatus";
 
 function LandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
+  const [status, setStatus] = useState("")
   const user = useSelector(selectUser)
   const dispatch = useDispatch();
-  console.log(user);
+  const router = useRouter()
 
   const openModal = (type) => {
     setModalType(type);
@@ -35,31 +39,56 @@ function LandingPage() {
     }
   };
 
-  const handleCheckout = async () => {
-    console.log('hitting checkout')
-    const checkoutSession = await fetch("/api/checkout_session", {
-      method: 'POST',
-      headers: {
-        origin: 'http://localhost:3000'
-      }
-    });
-
-    if (checkoutSession.statusCode === 500) {
-      console.error(checkoutSession.message)
-      return
-    }
-    const checkoutSessionJson = await checkoutSession.json()
-    console.log('checkoutSession: ', checkoutSessionJson.id)
-    const stripe = await getStripe();
-    const {error} = await stripe.redirectToCheckout({
-      sessionId: checkoutSessionJson.id
-    })
-
-    if (error){
-      console.warn(error.message)
-    }
-
+  const handleUpgradeToPremium = async() => {
+    const priceId = "price_1Pnnf7DM3EY2E0WOjkZvgNbV"
+    // "id": "price_1Pnnf7DM3EY2E0WOjkZvgNbV",
+    const checkoutUrl = await getCheckoutUrl(priceId, user?.currentUser.id)
+    router.push(checkoutUrl)
+    
   }
+  const handleManageSubscription = async() => {
+    const portalUrl = await getPortalUrl(user)
+    router.push(portalUrl)
+  }
+
+  // https://dashboard.stripe.com/test/settings/billing/portal need to go here to set up portal link have to redo this after test!
+
+  useEffect(() => {
+    const checkPremiumStatus = async() => {
+      const premiumStatus = await getPremiumStatus(user)
+      console.log(premiumStatus)
+      setStatus(premiumStatus ? "Premium" : "Basic");
+    }
+    if (user?.currentUser) {
+      checkPremiumStatus();
+    }
+  }, [user])
+
+  // const handleCheckout = async () => {
+  //   console.log('hitting checkout')
+  //   const checkoutSession = await fetch("/api/checkout_session", {
+  //     method: 'POST',
+  //     headers: {
+  //       origin: 'http://localhost:3000'
+  //     }
+  //   });
+
+  //   if (checkoutSession.statusCode === 500) {
+  //     console.error(checkoutSession.message)
+  //     return
+  //   }
+  //   const checkoutSessionJson = await checkoutSession.json()
+  //   console.log('checkoutSession: ', checkoutSessionJson.id)
+  //   const stripe = await getStripe();
+  //   const {error} = await stripe.redirectToCheckout({
+  //     sessionId: checkoutSessionJson.id
+  //   })
+
+  //   if (error){
+  //     console.warn(error.message)
+  //   }
+
+  // }
 
 
 
@@ -67,6 +96,9 @@ function LandingPage() {
     <div className="bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 w-screen h-screen m-0 p-0 flex flex-col items-center justify-center">
       {user?.currentUser ? (
         <div className="flex flex-col items-center">
+        <h1 className="text-5xl font-bold text-white mb-4">
+        { `Status: ${status}`}
+      </h1>
           <h1 className="text-4xl mb-4 font-bold text-white">
             Welcome, {user.currentUser.email}!
           </h1>
@@ -80,11 +112,17 @@ function LandingPage() {
                 </div>
                 <div className="flex flex-col gap-[1vh]">
                   <h1 className="text-[3vh]">professional</h1>
-                  <button className="bg-[#d64040] p-[2vh] rounded-full" onClick={handleCheckout}>choose professional</button>
+                  <button className="bg-[#d64040] p-[2vh] rounded-full" onClick={handleUpgradeToPremium}>choose professional</button>
                 </div>
               </div>
             </div>
           </div>
+          <button
+            onClick={handleManageSubscription}
+            className="py-2 px-6 text-white bg-blue-600 rounded-lg transition-transform transform hover:scale-105 mt-4"
+          >
+            Manage Subscription
+          </button>
           <button
               onClick={handleSignOut}
               className="py-2 px-6 text-white bg-red-600 rounded-lg transition-transform transform hover:scale-105"
