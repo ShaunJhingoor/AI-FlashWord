@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
   Typography,
@@ -14,7 +14,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Box,
+  Box, Grid,
 } from "@mui/material";
 import {
   collection,
@@ -45,10 +45,10 @@ const DecksPage = () => {
   const [currentDeck, setCurrentDeck] = useState(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [flashcards, setFlashcards] = useState([]);
   const [file, setFile] = useState(null);
   const [extractedText, setExtractedText] = useState("");
   const [fileName, setFileName] = useState("");
+  const fileInputRef = useRef(null)
   const currentUser = useSelector(selectUser);
   const CMAP_URL = "../../../node_modules/pdfjs-dist/cmaps/";
   const CMAP_PACKED = true;
@@ -103,11 +103,7 @@ const DecksPage = () => {
   const handleEdit = (deck) => {
     setCurrentDeck(deck);
     setEditDeckName(deck.id);
-    setEditDeckContent(
-      deck.content
-        .map((item) => `Question: ${item.question}\nAnswer: ${item.answer}`)
-        .join("\n\n")
-    );
+    setEditDeckContent(deck.content.map(item => `Question: ${item.question}\nAnswer: ${item.answer}`).join('\n\n'));
     setIsEditing(true);
     console.log(currentDeck);
   };
@@ -225,10 +221,7 @@ const DecksPage = () => {
       const data = await response.json();
 
       // Check if flashcards data is in expected format
-      if (
-        Array.isArray(data) &&
-        data.every((card) => card.question && card.answer)
-      ) {
+      if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
         setFlashcards(data);
         await addFlashcardDeck(deckName, JSON.stringify(data));
       } else {
@@ -245,6 +238,7 @@ const DecksPage = () => {
     if (e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
+      setFileName(selectedFile.name.split(".pdf")[0])
     }
     // console.log(selectedFile)
   };
@@ -268,13 +262,13 @@ const DecksPage = () => {
     e.preventDefault();
     if (file) {
       try {
-        // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
-        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
-        // .promise;
+        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+        // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
+        // // .promise;
         console.log('PDF submit: ', pdf)
         const text = await extractTextFromPDF(pdf);
-        setExtractedText(text);
-        setFileName(file.name.split(".pdf")[0]);
+        setExtractedText(text)
+
       } catch (error) {
         console.error("Error extracting text from PDF:", error);
       }
@@ -326,7 +320,15 @@ const DecksPage = () => {
     } catch (error) {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
+    } finally {
+      // Clear the file input field after processing
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
+    setExtractedText('');
+    setFileName('');
+    setFile(null);
   };
 
   return (
@@ -370,7 +372,6 @@ const DecksPage = () => {
           label="Deck Name"
           variant="outlined"
           fullWidth
-          value={deckName}
           onChange={(e) => setDeckName(e.target.value)}
           margin="normal"
           sx={{ mb: 2 }}
@@ -414,6 +415,7 @@ const DecksPage = () => {
           type="file"
           accept=".pdf"
           onChange={(e) => handleFileChange(e)}
+          ref={fileInputRef}
         />
         <Button
           variant="contained"
@@ -426,54 +428,65 @@ const DecksPage = () => {
       </Box>
 
       {/* Listing Decks */}
-      <List sx={{ width: "100%", maxWidth: "15rem" }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: '100%' }}>
+      <Grid container spacing={1} justifyContent="center">
         {decks.map((deck) => (
-          <ListItem
-            key={deck.id}
-            sx={{
-              mb: 2,
-              border: "1px solid #ddd",
-              borderRadius: 2,
-              background: "#f9f9f9",
-              boxShadow: 1,
-            }}
-          >
-            <ListItemText
-              primary={
-                <Box textAlign="center">
-                  <Typography
-                    variant="subtitle1"
-                    component="div"
-                    fontWeight="bold"
-                    onClick={() => handleDeckClick(deck)}
-                    sx={{
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                      color: "#1976d2",
-                    }}
-                  >
-                    {deck.id}
-                  </Typography>
-                  <Box display="flex" justifyContent="center" mt={1}>
-                    <IconButton
-                      onClick={() => handleEdit(deck)}
-                      sx={{ color: "#1976d2" }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDelete(deck.id)}
-                      sx={{ color: "#d32f2f" }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
-              }
-            />
-          </ListItem>
+          <Grid item xs={12} sm={6} md={4} key={deck.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Box
+               sx={{
+                border: '1px solid #ccc', // Lighter border for a cleaner look
+                borderRadius: 0.5, // Slightly rounded corners
+                background: '#fafafa', // Slightly off-white background for a paper effect
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)', // Subtle shadow to mimic paper lift
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '30rem',
+                height: '15rem',
+                transition: 'box-shadow 0.3s, transform 0.3s', // Smooth transition for hover effects
+                marginTop: "2rem",
+                marginBottom: "2rem",
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', // Slightly stronger shadow on hover
+                  transform: 'scale(1.01)', // Slightly enlarge the box on hover
+                },
+              }}
+            >
+              <Typography
+                 variant="subtitle1"
+                 component="div"
+                 fontWeight="bold"
+                 onClick={() => handleDeckClick(deck)}
+                 fontSize="2rem"
+                 sx={{
+                   cursor: 'pointer',
+                   textDecoration: 'underline',
+                   color: '#1976d2',
+                   mb: 1,
+                   transition: 'color 0.3s', // Smooth transition for hover effect
+                   '&:hover': {
+                     color: '#1565c0', // Darker color on hover
+                   },
+                 }}
+              >
+                {deck.id}
+              </Typography>
+              <Box display="flex" justifyContent="center" mb={1}>
+                <IconButton onClick={() => handleEdit(deck)} sx={{ color: '#1976d2', mr: 1, fontSize: "2rem"}}>
+                  <EditIcon />
+                </IconButton>
+                <IconButton onClick={() => handleDelete(deck.id)} sx={{ color: '#d32f2f' }}>
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          </Grid>
         ))}
-      </List>
+      </Grid>
+    </Box>
+
 
       {/* Edit Deck Modal */}
       <Dialog
@@ -488,7 +501,7 @@ const DecksPage = () => {
             label="Deck Name"
             variant="outlined"
             fullWidth
-            value={file}
+            value={editDeckName}
             onChange={(e) => setEditDeckName(e.target.value)}
             margin="normal"
           />
