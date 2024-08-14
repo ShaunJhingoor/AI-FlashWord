@@ -15,6 +15,7 @@ function SignUpPage({ onClose }) {
     signInWithPopup(auth, provider)
       .then((result) => {
         const user = result.user;
+        onClose()
       })
       .catch((error) => {
         const errorMessage = error.message;

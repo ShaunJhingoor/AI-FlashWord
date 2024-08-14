@@ -1,6 +1,7 @@
 import Stripe from "stripe";
+import { NextResponse } from "next/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRETKEY);
+const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRETKEY);
 
 const formatAmountForStripe = (amount, currency) => {
     return Math.round(amount * 100)
@@ -50,7 +51,6 @@ export async function POST(req) {
     );
   }
 }
-
 
 export async function GET(req) {
     const searchParams = req.nextUrl.searchParams
