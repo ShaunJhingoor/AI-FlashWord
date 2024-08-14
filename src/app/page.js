@@ -7,6 +7,7 @@ import { selectUser } from "../store/userSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/config"; // Ensure this import is correct
+import getStripe from "../../utils/get-stripe";
 
 function LandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,9 +35,32 @@ function LandingPage() {
     }
   };
 
-  const handleSubmit = async () => {
-    const checkoutSession = await fetch("/api/checkout", {});
+  const handleCheckout = async () => {
+    console.log('hitting checkout')
+    const checkoutSession = await fetch("/api/checkout_session", {
+      method: 'POST',
+      headers: {
+        origin: 'http://localhost:3000'
+      }
+    });
+
+    if (checkoutSession.statusCode === 500) {
+      console.error(checkoutSession.message)
+      return
+    }
+    const checkoutSessionJson = await checkoutSession.json()
+    console.log('checkoutSession: ', checkoutSessionJson.id)
+    const stripe = await getStripe();
+    const {error} = await stripe.redirectToCheckout({
+      sessionId: checkoutSessionJson.id
+    })
+
+    if (error){
+      console.warn(error.message)
+    }
+
   }
+
 
 
   return (
@@ -52,11 +76,11 @@ function LandingPage() {
               <div className="flex w-full justify-between items-center">
                 <div className="flex flex-col gap-[1vh]">
                   <h1 className="text-[3vh]">basic</h1>
-                  <button className="bg-[#d64040] p-[2vh] rounded-full">choose basic</button>
+                  <button className="bg-[#d64040] p-[2vh] rounded-full" >choose basic</button>
                 </div>
                 <div className="flex flex-col gap-[1vh]">
                   <h1 className="text-[3vh]">professional</h1>
-                  <button className="bg-[#d64040] p-[2vh] rounded-full">choose professional</button>
+                  <button className="bg-[#d64040] p-[2vh] rounded-full" onClick={handleCheckout}>choose professional</button>
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
 import {auth} from "../../firebase/config"
 
 function LoginPage({ onClose }) {
@@ -23,6 +23,7 @@ function LoginPage({ onClose }) {
     signInWithPopup(auth, provider)
       .then((result) => {
         const user = result.user;
+        onClose();
       })
       .catch((error) => {
         const errorMessage = error.message;
