@@ -63,7 +63,7 @@ function SignUpPage({ onClose }) {
               />
             </div>
             <div className="flex flex-col gap-[1vh] ">
-              <label htmlFor="password" className="block text-white text-[2vh]">
+              <label htmlFor="password" className="block text-white text-[2vh] lowercase">
                 Password:
               </label>
               <input

@@ -5,12 +5,8 @@ import LoginPage from "../Components/login";
 import SignUpPage from "../Components/signUp";
 
 function Landing() {
-  const [isModalOpen, setIsModalOpen] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
-
-  useEffect(() => {
-    setModalType("");
-  }, []);
 
   const landingCard = [
     {
