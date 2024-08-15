@@ -1,5 +1,6 @@
 // src/app/layout.js
 import { Inter } from 'next/font/google';
+import { GeistSans } from "geist/font/sans";
 import './reset.css';
 import ReduxProvider from '../store/Provider';
 import { AuthProvider } from '../context/AuthContext'
@@ -14,7 +15,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={GeistSans.className}>
         <ReduxProvider>
           <AuthProvider>
             {children}
