@@ -59,6 +59,14 @@ table {
         box-shadow: -1vh 2vh 3vh rgba(0, 0, 0, 0.4);
     }
 
+    .flippedShadow {
+        box-shadow: -1vh -2vh 3vh rgba(0, 0, 0, 0.4);
+    }
+
+    .shadowStroke {
+        box-shadow: -1vh 2vh 3vh rgba(0, 0, 0, 0.4), 0 0 0 0.15vh white;
+    }
+
     .landingCard {
     }
 

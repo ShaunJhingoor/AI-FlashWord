@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { auth } from "../../firebase/config"
+import Image from "next/image";
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 
 function SignUpPage({ onClose }) {
@@ -33,54 +34,84 @@ function SignUpPage({ onClose }) {
   };
 
   return (
-    <div className="relative bg-white p-8 rounded-lg shadow-lg">
-      <button
-        className="absolute top-2 right-2 text-red-500 text-2xl cursor-pointer hover:text-red-600 hover:scale-110 transition ease-in-out"
-        onClick={onClose}
+    <div className="relative bg-gradient-to-b from-[#111111] to-[#323232] shadowStroke dropShadow w-[60vh] flex flex-col justify-center items-center gap-[4vh] py-[2vh] rounded-[5vh]">
+      <h2 className="text-[5vh] text-center text-white">Sign up</h2>
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col justify-around w-full gap-[4vh]"
       >
-        X
-      </button>
-      <h2 className="text-3xl mb-6 text-center">Sign Up</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col">
-        <div className="mb-4">
-          <label htmlFor="email" className="block mb-2">Email:</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => { setEmail(e.target.value); setError(""); }}
-            required
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="password" className="block mb-2">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setError(""); }}
-            required
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        {error && (
-          <div className="text-red-600 text-center text-sm mb-4">
-            {error}
+        <div className="flex justify-around gap-[4vh] px-[4vh]">
+          <div className="flex flex-col gap-[2vh] w-1/2">
+            <div className="flex flex-col gap-[1vh]">
+              <label
+                htmlFor="email"
+                className="block lowercase text-white text-[2vh]"
+              >
+                Email:
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                placeholder="your email"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                required
+                className="w-full rounded-[5vh] pl-[1.5vh] py-[0.5vh] text-[2vh]"
+              />
+            </div>
+            <div className="flex flex-col gap-[1vh] ">
+              <label htmlFor="password" className="block text-white text-[2vh]">
+                Password:
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                placeholder="your password"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
+                required
+                className="w-full rounded-[5vh] pl-[1.5vh] py-[0.5vh] text-[2vh] "
+              />
+              {error ? (
+                <div className="text-red-600">{error}</div>
+              ) : (
+                <div className="opacity-1 opacity-0">
+                  hiii this is hiddennnn hiii
+                </div>
+              )}
+            </div>
           </div>
-        )}
-        <div className="flex flex-col items-center">
+          <div className="flex flex-col items-start w-1/2 gap-[1vh]">
+            <label
+              htmlFor="gmail"
+              className="block text-white text-[2vh] lowercase"
+            >
+              or sign up with:
+            </label>
+            <button onClick={handleGoogle} className="">
+              <Image
+                width={100}
+                height={100}
+                className="w-[4vh]"
+                src="/gmail.png"
+                alt=""
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-center items-center w-full m-auto gap-[1vh]">
           <button
             type="submit"
-            className="bg-green-500 text-white py-2 px-4 rounded mb-2 w-32 hover:bg-green-600 transition ease-in-out"
+            className="bg-[#FFFFFF] text-[3vh] font-semibold px-[2vh] py-[1vh] lowercase text-[#121212] rounded-full hover:bg-[#383838] transition ease-in-out"
           >
             Submit
-          </button>
-          <button
-            onClick={handleGoogle}
-            className="bg-blue-500 text-white py-2 px-4 rounded w-32 flex items-center justify-center hover:bg-blue-600 transition ease-in-out"
-          >
-            <i className="fab fa-google mr-2"></i> Sign up with Google
           </button>
         </div>
       </form>
