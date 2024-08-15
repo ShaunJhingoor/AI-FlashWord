@@ -211,13 +211,44 @@ const DecksPage = () => {
         "flashcards"
       );
       const docRef = doc(userCollectionRef, deckName);
-      await deleteDoc(docRef);
+  
+      // Fetch current user's document to get the current number
+      const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
+      const userDocSnap = await getDoc(userDocRef);
+      let currentNumber = 5; 
+  
+      if (userDocSnap.exists()) {
+        // Retrieve current number value
+        const data = userDocSnap.data();
+        currentNumber = data?.number;
+      }
+  
+      // Create a batch to perform multiple operations atomically
+      const batch = writeBatch(firestore);
+  
+      // Add the deck deletion to the batch
+      batch.delete(docRef);
+  
+      // Update the number field by incrementing it
+      if (status === false) {
+        currentNumber += 1;
+      }
+      console.log("Updated number after deletion:", currentNumber);
+      setRequestNumber(currentNumber);
+  
+      // Add the number field update to the batch
+      batch.set(userDocRef, { number: currentNumber }, { merge: true });
+  
+      // Commit the batch
+      await batch.commit();
+  
       alert("Deck deleted successfully!");
       fetchDecks();
     } catch (error) {
       console.error("Error deleting deck:", error);
     }
   };
+  
 
   const handleDeckClick = (deck) => {
     setCurrentDeck(deck);
