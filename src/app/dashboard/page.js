@@ -19,6 +19,8 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
+  getDoc, 
+  writeBatch
 } from "firebase/firestore";
 import { firestore } from "../../firebase/config";
 import { useSelector } from "react-redux";
@@ -79,15 +81,35 @@ const DecksPage = () => {
         alert("Deck name or content is missing.");
         return;
       }
-      const userCollectionRef = collection(
-        firestore,
-        "Users",
-        currentUser?.currentUser.id,
-        "flashcards"
-      );
-      const docRef = doc(userCollectionRef, name);
-
-      await setDoc(docRef, { content: JSON.parse(content) });
+  
+      // Reference to the user's document
+      const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
+      
+      // Fetch the current document data
+      const userDocSnap = await getDoc(userDocRef);
+      let currentNumber = 5; // Default starting number
+  
+      if (userDocSnap.exists()) {
+        // Retrieve current number value
+        const data = userDocSnap.data();
+        currentNumber = data?.number || 5;
+      }
+  
+      // Create a batch to perform multiple operations atomically
+      const batch = writeBatch(firestore);
+  
+      // Reference to the new deck document within the flashcards collection
+      const deckDocRef = doc(collection(userDocRef, "flashcards"), name);
+      
+      // Add the new deck content
+      batch.set(deckDocRef, { content: JSON.parse(content) });
+  
+      // Decrement the number field and update it in the user's document
+      batch.set(userDocRef, { number: currentNumber - 1 }, { merge: true });
+  
+      // Commit the batch
+      await batch.commit();
+  
       alert("Deck added successfully!");
       setDeckName("");
       setDeckContent("");
@@ -96,7 +118,10 @@ const DecksPage = () => {
       console.error("Error adding deck:", error);
     }
   };
-
+  
+  
+  
+  
   const handleEdit = (deck) => {
     setCurrentDeck(deck);
     setEditDeckName(deck.id);
