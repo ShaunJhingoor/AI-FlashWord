@@ -6,12 +6,13 @@ import SignUpPage from "./Components/signUp";
 import { selectUser } from "../store/userSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { signOut } from "firebase/auth";
-import { auth } from "../firebase/config"; // Ensure this import is correct
-// import getStripe from "../../utils/get-stripe";
+import { auth } from "../firebase/config"; 
 import { getCheckoutUrl, getPortalUrl } from "./account/stripePayment";
 import { useRouter } from "next/navigation";
 import { getPremiumStatus } from "./account/PremiumStatus";
 import DecksPage from "./dashboard/page";
+import { doc, updateDoc } from "firebase/firestore";
+import { firestore } from "../firebase/config"; 
 //Almost Everything in this page is going to go into a navbar component
 function LandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,13 +41,39 @@ function LandingPage() {
     }
   };
 
-  const handleUpgradeToPremium = async() => {
-    const priceId = "price_1Pnnf7DM3EY2E0WOjkZvgNbV"
-    // "id": "price_1Pnnf7DM3EY2E0WOjkZvgNbV",
-    const checkoutUrl = await getCheckoutUrl(priceId, user?.currentUser.id)
-    router.push(checkoutUrl)
+
+  const resetRequestNumber = async (userId) => {
+    try {
+      const userDocRef = doc(firestore, "Users", userId);
+      await updateDoc(userDocRef, { number: 5 });
+      console.log("Request number reset successfully.");
+    } catch (error) {
+      console.error("Error resetting request number:", error);
+    }
+  };
+  
+  const checkAndResetPremiumStatus = async (userId) => {
+    if (status) {
+      await resetRequestNumber(userId);
+    }
+  };
+
+  const handleUpgradeToPremium = async () => {
+  const priceId = "price_1Pnnf7DM3EY2E0WOjkZvgNbV";
+  try {
+    const checkoutUrl = await getCheckoutUrl(priceId, user?.currentUser.id);
+    // Redirect to Stripe Checkout
+    router.push(checkoutUrl);
     
+   
+  
+    await checkAndResetPremiumStatus(user?.currentUser.id);
+    
+  } catch (error) {
+    console.error("Error upgrading to premium:", error);
   }
+};
+
   const handleManageSubscription = async() => {
     const portalUrl = await getPortalUrl(user)
     router.push(portalUrl)
