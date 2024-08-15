@@ -102,7 +102,7 @@ function Landing() {
         </div>
       </div>
 
-      <div className="flex justify-around w-full items-center h-screen relative z-10">
+      <div className="bg-[#EBEBEB] flex justify-around w-full items-center h-screen relative z-10">
         <span className="flex flex-col gap-[4vh] items-start justify-start text-start w-[50vh]"></span>
 
         <div className="flex flex-col gap-[4vh] items-start justify-between text-start w-[50vh] relative h-full">
@@ -116,8 +116,8 @@ function Landing() {
           </div>
         </div>
 
-        <div className="bg-[#EBEBEB] flex justify-around w-full absolute bottom-0 dropShadow z-0">
-          <div className="bg-[#D9D9D9] rounded-t-[4vh] flex flex-col w-[60vh] p-[4vh] gap-[2vh] dropShadow">
+        <div className="flex justify-around w-full absolute bottom-0 z-0">
+          <div className="bg-gradient-to-t from-[#D9D9D9] to-[#ffffff] rounded-t-[4vh] flex flex-col w-[60vh] p-[4vh] gap-[2vh] dropShadow">
             <div>
               <h2 className="text-[4vh] font-bold capitalize">basic</h2>
               <h3>for the newbies</h3>
