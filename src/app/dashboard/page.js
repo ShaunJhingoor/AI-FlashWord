@@ -6,9 +6,6 @@ import {
   Typography,
   Button,
   TextField,
-  List,
-  ListItem,
-  ListItemText,
   IconButton,
   Dialog,
   DialogActions,
@@ -50,8 +47,8 @@ const DecksPage = () => {
   const [fileName, setFileName] = useState("");
   const fileInputRef = useRef(null)
   const currentUser = useSelector(selectUser);
-  const CMAP_URL = "../../../node_modules/pdfjs-dist/cmaps/";
-  const CMAP_PACKED = true;
+
+
 
   const fetchDecks = async () => {
     try {
@@ -222,7 +219,6 @@ const DecksPage = () => {
 
       // Check if flashcards data is in expected format
       if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
-        setFlashcards(data);
         await addFlashcardDeck(deckName, JSON.stringify(data));
       } else {
         alert("Invalid flashcards format received.");
