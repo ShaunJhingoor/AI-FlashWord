@@ -49,6 +49,8 @@ const DecksPage = () => {
   const [fileName, setFileName] = useState("");
   const [status, setStatus] = useState("")
   const [requestNumber, setRequestNumber] = useState(5)
+  const [numberCards, setNumberOfCards] = useState(10)
+  const [numberCardPDF, setNumberOfCardPDF] = useState(10)
   const fileInputRef = useRef(null)
   const currentUser = useSelector(selectUser);
 
@@ -287,18 +289,27 @@ const DecksPage = () => {
         handlePrompt(); 
         return; 
       }
+      const validNumberCards = (isNaN(numberCards) ? 10 : numberCards < 1 ? 1 : numberCards > 40 ? 40 : numberCards);
+     
+      const requestBody = {
+        deckContent,
+        numberCards: parseInt(validNumberCards), 
+      };
+  
       const response = await fetch("api/generate", {
         method: "POST",
-        body: deckContent,
+        headers: {
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify(requestBody), 
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch flashcards.");
       }
-
+  
       const data = await response.json();
-
-      // Check if flashcards data is in expected format
+  
       if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
         await addFlashcardDeck(deckName, JSON.stringify(data));
       } else {
@@ -308,7 +319,9 @@ const DecksPage = () => {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
     }
+    setNumberOfCards(10)
   };
+  
 
   const handleFileChange = (e) => {
     e.preventDefault();
@@ -382,17 +395,32 @@ const DecksPage = () => {
       alert("Extracted text or file name is missing.");
       return;
     }
+    if (requestNumber <= 0) {
+      handlePrompt(); 
+      return; 
+    }
     try {
+
+      let deckContent = extractedText
+      const validNumberCards = (isNaN(numberCardPDF) ? 10 : numberCardPDF < 1 ? 1 : numberCardPDF > 40 ? 40 : numberCardPDF);
+
+      const requestBody = {
+        deckContent,
+        numberCards: parseInt(validNumberCards), 
+      };
+
       const response = await fetch("api/generate", {
         method: "POST",
-        body: extractedText,
+        body: JSON.stringify(requestBody), 
       });
+  
 
       if (!response.ok) {
         throw new Error("Failed to fetch flashcards.");
       }
 
       const data = await response.json();
+      console.log(`data: ${data}`)
 
       if (
         Array.isArray(data) &&
@@ -406,7 +434,6 @@ const DecksPage = () => {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
     } finally {
-      // Clear the file input field after processing
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -414,6 +441,7 @@ const DecksPage = () => {
     setExtractedText('');
     setFileName('');
     setFile(null);
+    setNumberOfCardPDF(10)
   };
 
   
@@ -455,6 +483,22 @@ const DecksPage = () => {
         <Typography variant="h6" gutterBottom>
           Add New Flashcard Deck
         </Typography>
+        {status && (
+        <TextField
+          label="Number of Cards"
+          variant="outlined"
+          fullWidth
+          type="number"
+          value={numberCards}
+          onChange={(e) => setNumberOfCards(e.target.value)}
+          margin="normal"
+          sx={{ mb: 2 }}
+          inputProps={{ 
+            min: 1, 
+            max: 40 
+          }}
+        />
+        )}
         <TextField
           label="Deck Name"
           variant="outlined"
@@ -500,6 +544,18 @@ const DecksPage = () => {
         <Typography variant="h6" gutterBottom>
           Upload PDF to Generate Deck
         </Typography>
+        {status && (
+        <TextField
+          label="Number of Cards"
+          variant="outlined"
+          fullWidth
+          type="number"
+          value={numberCardPDF}
+          onChange={(e) => setNumberOfCardPDF(e.target.value)}
+          margin="normal"
+          sx={{ mb: 2 }}
+        />
+        )}
         <input
           type="file"
           accept=".pdf"
