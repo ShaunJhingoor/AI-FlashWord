@@ -31,7 +31,7 @@ import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
 import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
-import { getDocument } from "pdfjs-dist";
+import { getPremiumStatus } from "../account/PremiumStatus";
 
 const DecksPage = () => {
   const [decks, setDecks] = useState([]);
@@ -47,6 +47,8 @@ const DecksPage = () => {
   const [file, setFile] = useState(null);
   const [extractedText, setExtractedText] = useState("");
   const [fileName, setFileName] = useState("");
+  const [status, setStatus] = useState("")
+  const [requestNumber, setRequestNumber] = useState(5)
   const fileInputRef = useRef(null)
   const currentUser = useSelector(selectUser);
 
@@ -74,6 +76,17 @@ const DecksPage = () => {
   useEffect(() => {
     fetchDecks();
   }, [currentUser]);
+
+  useEffect(() => {
+    const checkPremiumStatus = async() => {
+      const premiumStatus = await getPremiumStatus(currentUser)
+      console.log(premiumStatus)
+      setStatus(premiumStatus);
+    }
+    if (currentUser?.currentUser) {
+      checkPremiumStatus();
+    }
+  }, [currentUser])
 
   const addFlashcardDeck = async (name, content) => {
     try {
@@ -105,8 +118,11 @@ const DecksPage = () => {
       batch.set(deckDocRef, { content: JSON.parse(content) });
   
       // Decrement the number field and update it in the user's document
-      batch.set(userDocRef, { number: currentNumber - 1 }, { merge: true });
-  
+      if (status === false) {
+       currentNumber -=  1
+      }
+      setRequestNumber(currentNumber)
+      batch.set(userDocRef, { number: currentNumber }, { merge: true })
       // Commit the batch
       await batch.commit();
   
@@ -226,11 +242,20 @@ const DecksPage = () => {
       setCurrentCardIndex(currentCardIndex - 1);
       setIsFlipped(false);
     }
+
   };
+
+  const handlePrompt = () => {
+    return alert('Free trial is over must enroll into premium to keep using the site')
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      if (requestNumber <= 0) {
+        handlePrompt(); 
+        return; 
+      }
       const response = await fetch("api/generate", {
         method: "POST",
         body: deckContent,
@@ -283,6 +308,10 @@ const DecksPage = () => {
     e.preventDefault();
     if (file) {
       try {
+        if (requestNumber <= 0) {
+          handlePrompt(); 
+          return; 
+        }
         const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
         // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
         // // .promise;
@@ -294,6 +323,10 @@ const DecksPage = () => {
         console.error("Error extracting text from PDF:", error);
       }
     } else {
+      if (requestNumber <= 0) {
+        handlePrompt(); 
+        return; 
+      }
       alert("No File Selected");
     }
   };
@@ -352,6 +385,8 @@ const DecksPage = () => {
     setFile(null);
   };
 
+  
+
   return (
     <Container
       maxWidth="md"
@@ -408,6 +443,7 @@ const DecksPage = () => {
           onChange={(e) => setDeckContent(e.target.value)}
           margin="normal"
         />
+
         <Button
           variant="contained"
           color="primary"
