@@ -340,7 +340,7 @@ const DecksPage = () => {
           generate flashcards
         </h1>
 
-        <div className="h-[40vh] relative bg-gradient-to-b from-[#111111] to-[#323232] shadowStroke dropShadow w-[60vh] flex flex-col justify-start items-center gap-[4vh] px-[4vh] py-[4vh] rounded-[2vh]">
+        <div className="h-[50vh] relative bg-gradient-to-b from-[#111111] to-[#323232] shadowStroke dropShadow w-[60vh] flex flex-col justify-start items-center gap-[4vh] px-[4vh] py-[4vh] rounded-[2vh]">
           <div className="flex flex-col justify-start w-full gap-[1vh]">
             <input
               type="text"
@@ -409,58 +409,7 @@ const DecksPage = () => {
           padding: "20px",
         }}
       >
-        <Typography
-          variant="h4"
-          gutterBottom
-          align="center"
-          sx={{ mb: 4, color: "#333", fontWeight: "bold", color: "white" }}
-        >
-          Flashcard Decks
-        </Typography>
-
-        {/* Adding a New Deck */}
-        <Box
-          mb={4}
-          p={3}
-          borderRadius={2}
-          boxShadow={3}
-          bgcolor="background.paper"
-          sx={{
-            maxWidth: "600px",
-            background: "linear-gradient(to right, #ffffff, #f9f9f9)",
-          }}
-        >
-          <Typography variant="h6" gutterBottom>
-            Add New Flashcard Deck
-          </Typography>
-          <TextField
-            label="Deck Name"
-            variant="outlined"
-            fullWidth
-            onChange={(e) => setDeckName(e.target.value)}
-            margin="normal"
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            label="Build your deck"
-            variant="outlined"
-            fullWidth
-            multiline
-            rows={4}
-            value={deckContent}
-            onChange={(e) => setDeckContent(e.target.value)}
-            margin="normal"
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            onClick={(e) => handleSubmit(e)}
-            sx={{ mt: 2, borderRadius: 2, boxShadow: 2 }}
-          >
-            Add Deck
-          </Button>
-        </Box>
+   
 
         <Box
           mb={4}
