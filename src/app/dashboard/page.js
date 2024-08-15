@@ -368,6 +368,7 @@ const DecksPage = () => {
           label="Deck Name"
           variant="outlined"
           fullWidth
+          value={deckName}
           onChange={(e) => setDeckName(e.target.value)}
           margin="normal"
           sx={{ mb: 2 }}
