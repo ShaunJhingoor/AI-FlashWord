@@ -11,7 +11,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Box, Grid,
+  Box,
+  Grid,
 } from "@mui/material";
 import {
   collection,
@@ -45,10 +46,8 @@ const DecksPage = () => {
   const [file, setFile] = useState(null);
   const [extractedText, setExtractedText] = useState("");
   const [fileName, setFileName] = useState("");
-  const fileInputRef = useRef(null)
+  const fileInputRef = useRef(null);
   const currentUser = useSelector(selectUser);
-
-
 
   const fetchDecks = async () => {
     try {
@@ -100,7 +99,11 @@ const DecksPage = () => {
   const handleEdit = (deck) => {
     setCurrentDeck(deck);
     setEditDeckName(deck.id);
-    setEditDeckContent(deck.content.map(item => `Question: ${item.question}\nAnswer: ${item.answer}`).join('\n\n'));
+    setEditDeckContent(
+      deck.content
+        .map((item) => `Question: ${item.question}\nAnswer: ${item.answer}`)
+        .join("\n\n")
+    );
     setIsEditing(true);
     console.log(currentDeck);
   };
@@ -218,7 +221,10 @@ const DecksPage = () => {
       const data = await response.json();
 
       // Check if flashcards data is in expected format
-      if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
+      if (
+        Array.isArray(data) &&
+        data.every((card) => card.question && card.answer)
+      ) {
         await addFlashcardDeck(deckName, JSON.stringify(data));
       } else {
         alert("Invalid flashcards format received.");
@@ -234,13 +240,13 @@ const DecksPage = () => {
     if (e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
-      setFileName(selectedFile.name.split(".pdf")[0])
+      setFileName(selectedFile.name.split(".pdf")[0]);
     }
     // console.log(selectedFile)
   };
 
   const extractTextFromPDF = async (pdf) => {
-    console.log(pdf)
+    console.log(pdf);
     const numPages = pdf.numPages;
     let text = "";
 
@@ -258,13 +264,13 @@ const DecksPage = () => {
     e.preventDefault();
     if (file) {
       try {
-        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
+          .promise;
         // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
         // // .promise;
-        console.log('PDF submit: ', pdf)
+        console.log("PDF submit: ", pdf);
         const text = await extractTextFromPDF(pdf);
-        setExtractedText(text)
-
+        setExtractedText(text);
       } catch (error) {
         console.error("Error extracting text from PDF:", error);
       }
@@ -319,351 +325,435 @@ const DecksPage = () => {
     } finally {
       // Clear the file input field after processing
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
-    setExtractedText('');
-    setFileName('');
+    setExtractedText("");
+    setFileName("");
     setFile(null);
   };
 
   return (
-    <Container
-      maxWidth="md"
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        background: "linear-gradient(to right, #f472b6, #a855f7, #3b82f6)",
-        minHeight: "100vh",
-        minWidth: "100vw",
-        padding: "20px",
-      }}
-    >
-      <Typography
-        variant="h4"
-        gutterBottom
-        align="center"
-        sx={{ mb: 4, color: "#333", fontWeight: "bold", color: "white" }}
-      >
-        Flashcard Decks
-      </Typography>
+    <>
+      <div className="w-full m-auto flex flex-col justify-center items-center gap-[4vh] pt-[4vh]">
+        <h1 className="capitalize text-[#989898] font-light text-[4vh]">
+          generate flashcards
+        </h1>
 
-      {/* Adding a New Deck */}
-      <Box
-        mb={4}
-        p={3}
-        borderRadius={2}
-        boxShadow={3}
-        bgcolor="background.paper"
-        sx={{
-          maxWidth: "600px",
-          background: "linear-gradient(to right, #ffffff, #f9f9f9)",
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          Add New Flashcard Deck
-        </Typography>
-        <TextField
-          label="Deck Name"
-          variant="outlined"
-          fullWidth
-          onChange={(e) => setDeckName(e.target.value)}
-          margin="normal"
-          sx={{ mb: 2 }}
-        />
-        <TextField
-          label="Build your deck"
-          variant="outlined"
-          fullWidth
-          multiline
-          rows={4}
-          value={deckContent}
-          onChange={(e) => setDeckContent(e.target.value)}
-          margin="normal"
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          fullWidth
-          onClick={(e) => handleSubmit(e)}
-          sx={{ mt: 2, borderRadius: 2, boxShadow: 2 }}
-        >
-          Add Deck
-        </Button>
-      </Box>
+        <div className="h-[40vh] relative bg-gradient-to-b from-[#111111] to-[#323232] shadowStroke dropShadow w-[60vh] flex flex-col justify-start items-center gap-[4vh] px-[4vh] py-[4vh] rounded-[2vh]">
+          <div className="flex flex-col justify-start w-full gap-[1vh]">
+            <input
+              type="text"
+              label="Deck Name"
+              aria-label="Deck Name"
+              onChange={(e) => setDeckName(e.target.value)}
+              placeholder="Enter Deck Title"
+              className="w-full h-[5vh] text-[5vh] text-white font-bold bg-transparent border-none outline-none placeholder-[#989898]"
+              required
+            />
+            <h3 className="text-[2vh] text-[#989898] font-medium capitalize">
+              use ai to generate a deck
+            </h3>
+          </div>
 
-      <Box
-        mb={4}
-        p={3}
-        borderRadius={2}
-        boxShadow={3}
-        bgcolor="background.paper"
-        sx={{
-          maxWidth: "600px",
-          background: "linear-gradient(to right, #ffffff, #f9f9f9)",
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          Upload PDF to Generate Deck
-        </Typography>
-        <input
-          type="file"
-          accept=".pdf"
-          onChange={(e) => handleFileChange(e)}
-          ref={fileInputRef}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={(e) => handleFileSubmit(e)}
-          sx={{ mt: 2 }}
-        >
-          Generate Deck from PDF
-        </Button>
-      </Box>
+          <div className="w-full h-full">
+            <textarea
+              id="deckContent"
+              value={deckContent}
+              placeholder="build your deck"
+              onChange={(e) => setDeckContent(e.target.value)}
+              required
+              className="w-full h-full rounded-[2vh] pl-[1.5vh] border-[#FFFFFF] border-[0.15vh] p-[2vh] text-[2vh] bg-[#1B1B1B] text-[#EBEBEB] font-semibold resize-none"
+            ></textarea>
 
-      {/* Listing Decks */}
-      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: '100%' }}>
-      <Grid container spacing={1} justifyContent="center">
-        {decks.map((deck) => (
-          <Grid item xs={12} sm={6} md={4} key={deck.id} sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Box
-               sx={{
-                border: '1px solid #ccc', // Lighter border for a cleaner look
-                borderRadius: 0.5, // Slightly rounded corners
-                background: '#fafafa', // Slightly off-white background for a paper effect
-                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)', // Subtle shadow to mimic paper lift
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '30rem',
-                height: '15rem',
-                transition: 'box-shadow 0.3s, transform 0.3s', // Smooth transition for hover effects
-                marginTop: "2rem",
-                marginBottom: "2rem",
-                '&:hover': {
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', // Slightly stronger shadow on hover
-                  transform: 'scale(1.01)', // Slightly enlarge the box on hover
-                },
-              }}
+            {/* <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              onClick={(e) => handleSubmit(e)}
+              sx={{ mt: 2, borderRadius: 2, boxShadow: 2 }}
             >
-              <Typography
-                 variant="subtitle1"
-                 component="div"
-                 fontWeight="bold"
-                 onClick={() => handleDeckClick(deck)}
-                 fontSize="2rem"
-                 sx={{
-                   cursor: 'pointer',
-                   textDecoration: 'underline',
-                   color: '#1976d2',
-                   mb: 1,
-                   transition: 'color 0.3s', // Smooth transition for hover effect
-                   '&:hover': {
-                     color: '#1565c0', // Darker color on hover
-                   },
-                 }}
-              >
-                {deck.id}
-              </Typography>
-              <Box display="flex" justifyContent="center" mb={1}>
-                <IconButton onClick={() => handleEdit(deck)} sx={{ color: '#1976d2', mr: 1, fontSize: "2rem"}}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton onClick={() => handleDelete(deck.id)} sx={{ color: '#d32f2f' }}>
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
-            </Box>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
+              Add Deck
+            </Button> */}
+          </div>
+        </div>
 
+        <div className="flex lowercase justify-around items-center gap-[2vh] w-[60vh]">
+          <div className="flex-1 w-full">
+            <h2 className="text-[3vh] text-[#989898]">how many cards?</h2>
+          </div>
+          <input
+            type="text"
+            className="lowercase transition-all ease-in-out text-black placeholder:text-[#383838] underline text-[2vh] font-semibold text-center placeholder:text-[2vh] w-[10%] p-[2vh]"
+            placeholder="1"
+            maxLength="10"
+          />
+          <button
+            onClick={(e) => handleSubmit(e)}
+            className="lowercase bg-[#383838] hover:bg-[#929292] transition-all ease-in-out text-[#FFFFFF] text-[2vh] font-semibold rounded-full px-[4vh] p-[2vh] box-border"
+          >
+            generate
+          </button>
+        </div>
+      </div>
 
-      {/* Edit Deck Modal */}
-      <Dialog
-        open={isEditing}
-        onClose={() => setIsEditing(false)}
-        maxWidth="sm"
-        fullWidth
+      <Container
+        maxWidth="md"
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          background: "linear-gradient(to right, #f472b6, #a855f7, #3b82f6)",
+          minHeight: "100vh",
+          minWidth: "100vw",
+          padding: "20px",
+        }}
       >
-        <DialogTitle>Edit Deck</DialogTitle>
-        <DialogContent>
+        <Typography
+          variant="h4"
+          gutterBottom
+          align="center"
+          sx={{ mb: 4, color: "#333", fontWeight: "bold", color: "white" }}
+        >
+          Flashcard Decks
+        </Typography>
+
+        {/* Adding a New Deck */}
+        <Box
+          mb={4}
+          p={3}
+          borderRadius={2}
+          boxShadow={3}
+          bgcolor="background.paper"
+          sx={{
+            maxWidth: "600px",
+            background: "linear-gradient(to right, #ffffff, #f9f9f9)",
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Add New Flashcard Deck
+          </Typography>
           <TextField
             label="Deck Name"
             variant="outlined"
             fullWidth
-            value={editDeckName}
-            onChange={(e) => setEditDeckName(e.target.value)}
+            onChange={(e) => setDeckName(e.target.value)}
             margin="normal"
+            sx={{ mb: 2 }}
           />
           <TextField
-            label="Deck Content"
+            label="Build your deck"
             variant="outlined"
             fullWidth
             multiline
-            rows={8}
-            value={editDeckContent}
-            onChange={(e) => setEditDeckContent(e.target.value)}
+            rows={4}
+            value={deckContent}
+            onChange={(e) => setDeckContent(e.target.value)}
             margin="normal"
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsEditing(false)} color="primary">
-            Cancel
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={(e) => handleSubmit(e)}
+            sx={{ mt: 2, borderRadius: 2, boxShadow: 2 }}
+          >
+            Add Deck
           </Button>
-          <Button onClick={handleSave} color="primary">
-            Save Changes
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
 
-      {/* Flashcard Modal */}
-      <Dialog
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        maxWidth="md"
-        fullWidth
-        sx={{
-          backgroundColor: "transparent",
-          ".MuiPaper-root": {
-            backgroundColor: "#FAC9BF",
-          },
-        }}
-      >
-        <DialogTitle
+        <Box
+          mb={4}
+          p={3}
+          borderRadius={2}
+          boxShadow={3}
+          bgcolor="background.paper"
           sx={{
-            textAlign: "center",
-            fontWeight: "bold",
-            position: "relative",
-            color: "white",
-            fontSize: "3rem",
+            maxWidth: "600px",
+            background: "linear-gradient(to right, #ffffff, #f9f9f9)",
           }}
         >
-          {currentDeck && currentDeck.id}
-          <IconButton
-            onClick={() => setIsModalOpen(false)}
-            sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              color: "#d32f2f",
-            }}
+          <Typography variant="h6" gutterBottom>
+            Upload PDF to Generate Deck
+          </Typography>
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={(e) => handleFileChange(e)}
+            ref={fileInputRef}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={(e) => handleFileSubmit(e)}
+            sx={{ mt: 2 }}
           >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
+            Generate Deck from PDF
+          </Button>
+        </Box>
 
-        <DialogContent
-          sx={{ textAlign: "center", backgroundColor: "inherit", p: 0 }}
+        {/* Listing Decks */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minWidth: "100%",
+          }}
         >
-          <Box
-            sx={{
-              perspective: "1000px",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
-              height: "30vh",
-              width: "70%",
-              transformStyle: "preserve-3d",
-              transition: "transform 0.6s",
-              transform: isFlipped ? "rotateY(180deg)" : "none",
-              marginBottom: "2rem",
-            }}
-            onClick={handleCardFlip}
-          >
-            <Box
-              sx={{
-                position: "absolute",
-                height: "100%",
-                width: "100%",
-                backfaceVisibility: "hidden",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontSize: "2rem",
-                padding: "10px",
-                backgroundColor: "#fff",
-                borderRadius: "10px",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                transform: isFlipped ? "rotateY(180deg)" : "none",
-              }}
-            >
-              {currentDeck && currentDeck.content[currentCardIndex].question}
-            </Box>
-            <Box
-              sx={{
-                position: "absolute",
-                height: "100%",
-                width: "100%",
-                backfaceVisibility: "hidden",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontSize: "2rem",
-                padding: "10px",
-                backgroundColor: "#fff",
-                borderRadius: "10px",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                transform: "rotateY(180deg)",
-              }}
-            >
-              {currentDeck && currentDeck.content[currentCardIndex].answer}
-            </Box>
-          </Box>
-        </DialogContent>
+          <Grid container spacing={1} justifyContent="center">
+            {decks.map((deck) => (
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={4}
+                key={deck.id}
+                sx={{ display: "flex", justifyContent: "center" }}
+              >
+                <Box
+                  sx={{
+                    border: "1px solid #ccc", // Lighter border for a cleaner look
+                    borderRadius: 0.5, // Slightly rounded corners
+                    background: "#fafafa", // Slightly off-white background for a paper effect
+                    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)", // Subtle shadow to mimic paper lift
+                    textAlign: "center",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "30rem",
+                    height: "15rem",
+                    transition: "box-shadow 0.3s, transform 0.3s", // Smooth transition for hover effects
+                    marginTop: "2rem",
+                    marginBottom: "2rem",
+                    "&:hover": {
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)", // Slightly stronger shadow on hover
+                      transform: "scale(1.01)", // Slightly enlarge the box on hover
+                    },
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    component="div"
+                    fontWeight="bold"
+                    onClick={() => handleDeckClick(deck)}
+                    fontSize="2rem"
+                    sx={{
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                      color: "#1976d2",
+                      mb: 1,
+                      transition: "color 0.3s", // Smooth transition for hover effect
+                      "&:hover": {
+                        color: "#1565c0", // Darker color on hover
+                      },
+                    }}
+                  >
+                    {deck.id}
+                  </Typography>
+                  <Box display="flex" justifyContent="center" mb={1}>
+                    <IconButton
+                      onClick={() => handleEdit(deck)}
+                      sx={{ color: "#1976d2", mr: 1, fontSize: "2rem" }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDelete(deck.id)}
+                      sx={{ color: "#d32f2f" }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
 
-        <DialogActions sx={{ justifyContent: "center", padding: 0 }}>
-          <IconButton
-            onClick={handlePrevCard}
-            disabled={currentCardIndex === 0}
+        {/* Edit Deck Modal */}
+        <Dialog
+          open={isEditing}
+          onClose={() => setIsEditing(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Edit Deck</DialogTitle>
+          <DialogContent>
+            <TextField
+              label="Deck Name"
+              variant="outlined"
+              fullWidth
+              value={editDeckName}
+              onChange={(e) => setEditDeckName(e.target.value)}
+              margin="normal"
+            />
+            <TextField
+              label="Deck Content"
+              variant="outlined"
+              fullWidth
+              multiline
+              rows={8}
+              value={editDeckContent}
+              onChange={(e) => setEditDeckContent(e.target.value)}
+              margin="normal"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsEditing(false)} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={handleSave} color="primary">
+              Save Changes
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Flashcard Modal */}
+        <Dialog
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+          sx={{
+            backgroundColor: "transparent",
+            ".MuiPaper-root": {
+              backgroundColor: "#FAC9BF",
+            },
+          }}
+        >
+          <DialogTitle
             sx={{
-              position: "absolute",
-              left: 0,
-              top: "50%",
-              transform: "translateY(-50%)",
-              backgroundColor: "#fff",
-              borderRadius: "50%",
-              boxShadow: 1,
-              "&:hover": {
-                boxShadow: 3,
-                backgroundColor: "#fff", // Adjust the shadow intensity as needed
-              },
+              textAlign: "center",
+              fontWeight: "bold",
+              position: "relative",
+              color: "white",
+              fontSize: "3rem",
             }}
           >
-            <ArrowBackIosIcon />
-          </IconButton>
-          <IconButton
-            onClick={handleNextCard}
-            disabled={
-              !currentDeck ||
-              currentCardIndex === currentDeck.content.length - 1
-            }
-            sx={{
-              position: "absolute",
-              right: 0,
-              top: "50%",
-              transform: "translateY(-50%)",
-              backgroundColor: "#fff",
-              borderRadius: "50%",
-              boxShadow: 1,
-              "&:hover": {
-                boxShadow: 3,
+            {currentDeck && currentDeck.id}
+            <IconButton
+              onClick={() => setIsModalOpen(false)}
+              sx={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                color: "#d32f2f",
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+
+          <DialogContent
+            sx={{ textAlign: "center", backgroundColor: "inherit", p: 0 }}
+          >
+            <Box
+              sx={{
+                perspective: "1000px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+                height: "30vh",
+                width: "70%",
+                transformStyle: "preserve-3d",
+                transition: "transform 0.6s",
+                transform: isFlipped ? "rotateY(180deg)" : "none",
+                marginBottom: "2rem",
+              }}
+              onClick={handleCardFlip}
+            >
+              <Box
+                sx={{
+                  position: "absolute",
+                  height: "100%",
+                  width: "100%",
+                  backfaceVisibility: "hidden",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  fontSize: "2rem",
+                  padding: "10px",
+                  backgroundColor: "#fff",
+                  borderRadius: "10px",
+                  boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                  transform: isFlipped ? "rotateY(180deg)" : "none",
+                }}
+              >
+                {currentDeck && currentDeck.content[currentCardIndex].question}
+              </Box>
+              <Box
+                sx={{
+                  position: "absolute",
+                  height: "100%",
+                  width: "100%",
+                  backfaceVisibility: "hidden",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  fontSize: "2rem",
+                  padding: "10px",
+                  backgroundColor: "#fff",
+                  borderRadius: "10px",
+                  boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                  transform: "rotateY(180deg)",
+                }}
+              >
+                {currentDeck && currentDeck.content[currentCardIndex].answer}
+              </Box>
+            </Box>
+          </DialogContent>
+
+          <DialogActions sx={{ justifyContent: "center", padding: 0 }}>
+            <IconButton
+              onClick={handlePrevCard}
+              disabled={currentCardIndex === 0}
+              sx={{
+                position: "absolute",
+                left: 0,
+                top: "50%",
+                transform: "translateY(-50%)",
                 backgroundColor: "#fff",
-              },
-            }}
-          >
-            <ArrowForwardIosIcon />
-          </IconButton>
-        </DialogActions>
-      </Dialog>
-    </Container>
+                borderRadius: "50%",
+                boxShadow: 1,
+                "&:hover": {
+                  boxShadow: 3,
+                  backgroundColor: "#fff", // Adjust the shadow intensity as needed
+                },
+              }}
+            >
+              <ArrowBackIosIcon />
+            </IconButton>
+            <IconButton
+              onClick={handleNextCard}
+              disabled={
+                !currentDeck ||
+                currentCardIndex === currentDeck.content.length - 1
+              }
+              sx={{
+                position: "absolute",
+                right: 0,
+                top: "50%",
+                transform: "translateY(-50%)",
+                backgroundColor: "#fff",
+                borderRadius: "50%",
+                boxShadow: 1,
+                "&:hover": {
+                  boxShadow: 3,
+                  backgroundColor: "#fff",
+                },
+              }}
+            >
+              <ArrowForwardIosIcon />
+            </IconButton>
+          </DialogActions>
+        </Dialog>
+      </Container>
+    </>
   );
 };
 
