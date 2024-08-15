@@ -11,7 +11,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Box, Grid,
+  Box,
+  Grid,
 } from "@mui/material";
 import {
   collection,
@@ -19,14 +20,15 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
-  getDoc, 
-  writeBatch
+  getDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { firestore } from "../../firebase/config";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/userSlice";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import PostAddIcon from "@mui/icons-material/PostAdd";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
@@ -47,12 +49,11 @@ const DecksPage = () => {
   const [file, setFile] = useState(null);
   const [extractedText, setExtractedText] = useState("");
   const [fileName, setFileName] = useState("");
-  const [status, setStatus] = useState("")
-  const [requestNumber, setRequestNumber] = useState(5)
-  const fileInputRef = useRef(null)
+  const [status, setStatus] = useState("");
+  const [requestNumber, setRequestNumber] = useState(5);
+  const fileInputRef = useRef(null);
   const currentUser = useSelector(selectUser);
-
-
+  const [test, setTest] = useState(null);
 
   const fetchDecks = async () => {
     try {
@@ -78,15 +79,15 @@ const DecksPage = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    const checkPremiumStatus = async() => {
-      const premiumStatus = await getPremiumStatus(currentUser)
-      console.log(premiumStatus)
+    const checkPremiumStatus = async () => {
+      const premiumStatus = await getPremiumStatus(currentUser);
+      console.log(premiumStatus);
       setStatus(premiumStatus);
-    }
+    };
     if (currentUser?.currentUser) {
       checkPremiumStatus();
     }
-  }, [currentUser])
+  }, [currentUser]);
 
   const addFlashcardDeck = async (name, content) => {
     try {
@@ -94,38 +95,38 @@ const DecksPage = () => {
         alert("Deck name or content is missing.");
         return;
       }
-  
+
       // Reference to the user's document
       const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
-      
+
       // Fetch the current document data
       const userDocSnap = await getDoc(userDocRef);
       let currentNumber = 5; // Default starting number
-  
+
       if (userDocSnap.exists()) {
         // Retrieve current number value
         const data = userDocSnap.data();
         currentNumber = data?.number || 5;
       }
-  
+
       // Create a batch to perform multiple operations atomically
       const batch = writeBatch(firestore);
-  
+
       // Reference to the new deck document within the flashcards collection
       const deckDocRef = doc(collection(userDocRef, "flashcards"), name);
-      
+
       // Add the new deck content
       batch.set(deckDocRef, { content: JSON.parse(content) });
-  
+
       // Decrement the number field and update it in the user's document
       if (status === false) {
-       currentNumber -=  1
+        currentNumber -= 1;
       }
-      setRequestNumber(currentNumber)
-      batch.set(userDocRef, { number: currentNumber }, { merge: true })
+      setRequestNumber(currentNumber);
+      batch.set(userDocRef, { number: currentNumber }, { merge: true });
       // Commit the batch
       await batch.commit();
-  
+
       alert("Deck added successfully!");
       setDeckName("");
       setDeckContent("");
@@ -134,14 +135,15 @@ const DecksPage = () => {
       console.error("Error adding deck:", error);
     }
   };
-  
-  
-  
-  
+
   const handleEdit = (deck) => {
     setCurrentDeck(deck);
     setEditDeckName(deck.id);
-    setEditDeckContent(deck.content.map(item => `Question: ${item.question}\nAnswer: ${item.answer}`).join('\n\n'));
+    setEditDeckContent(
+      deck.content
+        .map((item) => `Question: ${item.question}\nAnswer: ${item.answer}`)
+        .join("\n\n")
+    );
     setIsEditing(true);
     console.log(currentDeck);
   };
@@ -211,44 +213,43 @@ const DecksPage = () => {
         "flashcards"
       );
       const docRef = doc(userCollectionRef, deckName);
-  
+
       // Fetch current user's document to get the current number
       const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
       const userDocSnap = await getDoc(userDocRef);
-      let currentNumber = 5; 
-  
+      let currentNumber = 5;
+
       if (userDocSnap.exists()) {
         // Retrieve current number value
         const data = userDocSnap.data();
         currentNumber = data?.number;
       }
-  
+
       // Create a batch to perform multiple operations atomically
       const batch = writeBatch(firestore);
-  
+
       // Add the deck deletion to the batch
       batch.delete(docRef);
-  
+
       // Update the number field by incrementing it
       if (status === false) {
         currentNumber += 1;
       }
       console.log("Updated number after deletion:", currentNumber);
       setRequestNumber(currentNumber);
-  
+
       // Add the number field update to the batch
       batch.set(userDocRef, { number: currentNumber }, { merge: true });
-  
+
       // Commit the batch
       await batch.commit();
-  
+
       alert("Deck deleted successfully!");
       fetchDecks();
     } catch (error) {
       console.error("Error deleting deck:", error);
     }
   };
-  
 
   const handleDeckClick = (deck) => {
     setCurrentDeck(deck);
@@ -273,19 +274,20 @@ const DecksPage = () => {
       setCurrentCardIndex(currentCardIndex - 1);
       setIsFlipped(false);
     }
-
   };
 
   const handlePrompt = () => {
-    return alert('Free trial is over must enroll into premium to keep using the site')
-  }
+    return alert(
+      "Free trial is over must enroll into premium to keep using the site"
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (requestNumber <= 0) {
-        handlePrompt(); 
-        return; 
+        handlePrompt();
+        return;
       }
       const response = await fetch("api/generate", {
         method: "POST",
@@ -299,7 +301,10 @@ const DecksPage = () => {
       const data = await response.json();
 
       // Check if flashcards data is in expected format
-      if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
+      if (
+        Array.isArray(data) &&
+        data.every((card) => card.question && card.answer)
+      ) {
         await addFlashcardDeck(deckName, JSON.stringify(data));
       } else {
         alert("Invalid flashcards format received.");
@@ -315,13 +320,13 @@ const DecksPage = () => {
     if (e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
-      setFileName(selectedFile.name.split(".pdf")[0])
+      setFileName(selectedFile.name.split(".pdf")[0]);
     }
     // console.log(selectedFile)
   };
 
   const extractTextFromPDF = async (pdf) => {
-    console.log(pdf)
+    console.log(pdf);
     const numPages = pdf.numPages;
     let text = "";
 
@@ -340,23 +345,23 @@ const DecksPage = () => {
     if (file) {
       try {
         if (requestNumber <= 0) {
-          handlePrompt(); 
-          return; 
+          handlePrompt();
+          return;
         }
-        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
+          .promise;
         // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
         // // .promise;
-        console.log('PDF submit: ', pdf)
+        console.log("PDF submit: ", pdf);
         const text = await extractTextFromPDF(pdf);
-        setExtractedText(text)
-
+        setExtractedText(text);
       } catch (error) {
         console.error("Error extracting text from PDF:", error);
       }
     } else {
       if (requestNumber <= 0) {
-        handlePrompt(); 
-        return; 
+        handlePrompt();
+        return;
       }
       alert("No File Selected");
     }
@@ -408,15 +413,35 @@ const DecksPage = () => {
     } finally {
       // Clear the file input field after processing
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
-    setExtractedText('');
-    setFileName('');
+    setExtractedText("");
+    setFileName("");
     setFile(null);
   };
 
-  
+  const handleCreateTest = async (e, deck) => {
+    // alert('hitting create');
+    e.preventDefault();
+    console.log("deck", deck.content);
+    // console.log("Type of deck.content: ", typeof deck.content); // Should be "object"
+
+    try {
+      const res = await fetch("api/generate-test", {
+        method: "POST",
+        body: JSON.stringify(deck.content),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to create test");
+      }
+      const data = await res.json();
+      console.log("Generate test res: ", data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <Container
@@ -517,65 +542,91 @@ const DecksPage = () => {
       </Box>
 
       {/* Listing Decks */}
-      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: '100%' }}>
-      <Grid container spacing={1} justifyContent="center">
-        {decks.map((deck) => (
-          <Grid item xs={12} sm={6} md={4} key={deck.id} sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Box
-               sx={{
-                border: '1px solid #ccc', // Lighter border for a cleaner look
-                borderRadius: 0.5, // Slightly rounded corners
-                background: '#fafafa', // Slightly off-white background for a paper effect
-                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)', // Subtle shadow to mimic paper lift
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '30rem',
-                height: '15rem',
-                transition: 'box-shadow 0.3s, transform 0.3s', // Smooth transition for hover effects
-                marginTop: "2rem",
-                marginBottom: "2rem",
-                '&:hover': {
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', // Slightly stronger shadow on hover
-                  transform: 'scale(1.01)', // Slightly enlarge the box on hover
-                },
-              }}
+      <Box
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minWidth: "100%",
+        }}
+      >
+        <Grid container spacing={1} justifyContent="center">
+          {decks.map((deck) => (
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              key={deck.id}
+              sx={{ display: "flex", justifyContent: "center" }}
             >
-              <Typography
-                 variant="subtitle1"
-                 component="div"
-                 fontWeight="bold"
-                 onClick={() => handleDeckClick(deck)}
-                 fontSize="2rem"
-                 sx={{
-                   cursor: 'pointer',
-                   textDecoration: 'underline',
-                   color: '#1976d2',
-                   mb: 1,
-                   transition: 'color 0.3s', // Smooth transition for hover effect
-                   '&:hover': {
-                     color: '#1565c0', // Darker color on hover
-                   },
-                 }}
+              <Box
+                sx={{
+                  border: "1px solid #ccc", // Lighter border for a cleaner look
+                  borderRadius: 0.5, // Slightly rounded corners
+                  background: "#fafafa", // Slightly off-white background for a paper effect
+                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)", // Subtle shadow to mimic paper lift
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "30rem",
+                  height: "15rem",
+                  transition: "box-shadow 0.3s, transform 0.3s", // Smooth transition for hover effects
+                  marginTop: "2rem",
+                  marginBottom: "2rem",
+                  "&:hover": {
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)", // Slightly stronger shadow on hover
+                    transform: "scale(1.01)", // Slightly enlarge the box on hover
+                  },
+                }}
               >
-                {deck.id}
-              </Typography>
-              <Box display="flex" justifyContent="center" mb={1}>
-                <IconButton onClick={() => handleEdit(deck)} sx={{ color: '#1976d2', mr: 1, fontSize: "2rem"}}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton onClick={() => handleDelete(deck.id)} sx={{ color: '#d32f2f' }}>
-                  <DeleteIcon />
-                </IconButton>
+                <Typography
+                  variant="subtitle1"
+                  component="div"
+                  fontWeight="bold"
+                  onClick={() => handleDeckClick(deck)}
+                  fontSize="2rem"
+                  sx={{
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    color: "#1976d2",
+                    mb: 1,
+                    transition: "color 0.3s", // Smooth transition for hover effect
+                    "&:hover": {
+                      color: "#1565c0", // Darker color on hover
+                    },
+                  }}
+                >
+                  {deck.id}
+                </Typography>
+                <Box display="flex" justifyContent="center" mb={1}>
+                  <IconButton
+                    onClick={() => handleEdit(deck)}
+                    sx={{ color: "#1976d2", mr: 1, fontSize: "2rem" }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDelete(deck.id)}
+                    sx={{ color: "#d32f2f" }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={(e) => handleCreateTest(e, deck)}
+                    // onClick={(e) => setTest({})}
+                  >
+                    <PostAddIcon />
+                  </IconButton>
+                </Box>
               </Box>
-            </Box>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
-
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
       {/* Edit Deck Modal */}
       <Dialog
@@ -755,6 +806,10 @@ const DecksPage = () => {
             <ArrowForwardIosIcon />
           </IconButton>
         </DialogActions>
+      </Dialog>
+
+      <Dialog open={test} onClose={() => setTest(null)}>
+        <DialogTitle>AI Generated Test</DialogTitle>
       </Dialog>
     </Container>
   );
