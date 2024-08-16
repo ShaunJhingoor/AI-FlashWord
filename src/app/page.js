@@ -1,7 +1,6 @@
 "use client";
 import { selectUser } from "../store/userSlice";
-import { useSelector } 
-  from "react-redux";
+import { useSelector } from "react-redux";
 import Landing from "./Components/Landing";
 import Nav from "./Components/Nav";
 import DecksPage from "./dashboard/page";

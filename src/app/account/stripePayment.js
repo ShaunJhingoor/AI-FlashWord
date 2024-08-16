@@ -26,7 +26,6 @@ export const getCheckoutUrl = async (priceId, currentUserId) => {
                 reject(new Error(`An error occured ${error.message}`))
             }
             if(url){
-                console.log("Stripe Checkout URL:", url);
                 unsubscribe();
                 resolve(url);
             }
@@ -50,7 +49,6 @@ export const getPortalUrl = async (user) => {
       });
   
       dataWithUrl = data;
-      console.log("Reroute to Stripe portal: ", dataWithUrl.url);
     } catch (error) {
       console.error(error);
     }

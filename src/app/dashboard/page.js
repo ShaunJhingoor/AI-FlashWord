@@ -22,7 +22,7 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
-  getDoc,
+  getDoc, 
   writeBatch,
 } from "firebase/firestore";
 import { firestore } from "../../firebase/config";
@@ -50,11 +50,11 @@ const DecksPage = () => {
   const [file, setFile] = useState(null);
   const [extractedText, setExtractedText] = useState("");
   const [fileName, setFileName] = useState("");
-  const [status, setStatus] = useState("");
-  const [requestNumber, setRequestNumber] = useState(5);
-  const [numberCards, setNumberOfCards] = useState(10);
-  const [numberCardPDF, setNumberOfCardPDF] = useState(10);
-  const fileInputRef = useRef(null);
+  const [status, setStatus] = useState("")
+  const [requestNumber, setRequestNumber] = useState(5)
+  const [numberCards, setNumberOfCards] = useState(10)
+  const [numberCardPDF, setNumberOfCardPDF] = useState(10)
+  const fileInputRef = useRef(null)
   const currentUser = useSelector(selectUser);
 
   useEffect(() => {
@@ -89,15 +89,14 @@ const DecksPage = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    const checkPremiumStatus = async () => {
-      const premiumStatus = await getPremiumStatus(currentUser);
-      console.log(premiumStatus);
+    const checkPremiumStatus = async() => {
+      const premiumStatus = await getPremiumStatus(currentUser)
       setStatus(premiumStatus);
-    };
+    }
     if (currentUser?.currentUser) {
       checkPremiumStatus();
     }
-  }, [currentUser]);
+  }, [currentUser])
 
   const addFlashcardDeck = async (name, content) => {
     try {
@@ -105,38 +104,38 @@ const DecksPage = () => {
         alert("Deck name or content is missing.");
         return;
       }
-
+  
       // Reference to the user's document
       const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
-
+      
       // Fetch the current document data
       const userDocSnap = await getDoc(userDocRef);
       let currentNumber = 5; // Default starting number
-
+  
       if (userDocSnap.exists()) {
         // Retrieve current number value
         const data = userDocSnap.data();
         currentNumber = data?.number || 5;
       }
-
+  
       // Create a batch to perform multiple operations atomically
       const batch = writeBatch(firestore);
-
+  
       // Reference to the new deck document within the flashcards collection
       const deckDocRef = doc(collection(userDocRef, "flashcards"), name);
-
+      
       // Add the new deck content
       batch.set(deckDocRef, { content: JSON.parse(content) });
-
+  
       // Decrement the number field and update it in the user's document
       if (status === false) {
-        currentNumber -= 1;
+       currentNumber -=  1
       }
-      setRequestNumber(currentNumber);
-      batch.set(userDocRef, { number: currentNumber }, { merge: true });
+      setRequestNumber(currentNumber)
+      batch.set(userDocRef, { number: currentNumber }, { merge: true })
       // Commit the batch
       await batch.commit();
-
+  
       alert("Deck added successfully!");
       setDeckName("");
       setDeckContent("");
@@ -145,7 +144,10 @@ const DecksPage = () => {
       console.error("Error adding deck:", error);
     }
   };
-
+  
+  
+  
+  
   const handleEdit = (deck) => {
     setCurrentDeck(deck);
     setEditDeckName(deck.id);
@@ -155,11 +157,9 @@ const DecksPage = () => {
         .join("\n\n")
     );
     setIsEditing(true);
-    console.log(currentDeck);
   };
 
   const handleSave = async () => {
-    console.log(currentDeck);
     try {
       const userCollectionRef = collection(
         firestore,
@@ -223,43 +223,44 @@ const DecksPage = () => {
         "flashcards"
       );
       const docRef = doc(userCollectionRef, deckName);
-
+  
       // Fetch current user's document to get the current number
       const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
       const userDocSnap = await getDoc(userDocRef);
-      let currentNumber = 5;
-
+      let currentNumber = 5; 
+  
       if (userDocSnap.exists()) {
         // Retrieve current number value
         const data = userDocSnap.data();
         currentNumber = data?.number;
       }
-
+  
       // Create a batch to perform multiple operations atomically
       const batch = writeBatch(firestore);
-
+  
       // Add the deck deletion to the batch
       batch.delete(docRef);
-
+  
       // Update the number field by incrementing it
       if (status === false) {
         currentNumber += 1;
       }
-      console.log("Updated number after deletion:", currentNumber);
+  
       setRequestNumber(currentNumber);
-
+  
       // Add the number field update to the batch
       batch.set(userDocRef, { number: currentNumber }, { merge: true });
-
+  
       // Commit the batch
       await batch.commit();
-
+  
       alert("Deck deleted successfully!");
       fetchDecks();
     } catch (error) {
       console.error("Error deleting deck:", error);
     }
   };
+  
 
   const handleDeckClick = (deck) => {
     setCurrentDeck(deck);
@@ -284,10 +285,10 @@ const DecksPage = () => {
       setCurrentCardIndex(currentCardIndex - 1);
       setIsFlipped(false);
     }
+
   };
 
   const handlePrompt = () => {
-    return alert('Free trial is over must enroll into premium to keep using the site')
     return alert('Limited to 5 saved decks on basic package.')
   }
 
@@ -295,40 +296,31 @@ const DecksPage = () => {
     e.preventDefault();
     try {
       if (requestNumber <= 0) {
-        handlePrompt();
-        return;
+        handlePrompt(); 
+        return; 
       }
-      const validNumberCards = isNaN(numberCards)
-        ? 10
-        : numberCards < 1
-        ? 1
-        : numberCards > 40
-        ? 40
-        : numberCards;
-
+      const validNumberCards = (isNaN(numberCards) ? 10 : numberCards < 1 ? 1 : numberCards > 40 ? 40 : numberCards);
+     
       const requestBody = {
         deckContent,
-        numberCards: parseInt(validNumberCards),
+        numberCards: parseInt(validNumberCards), 
       };
-
+  
       const response = await fetch("api/generate", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json' 
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(requestBody), 
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch flashcards.");
       }
-
+  
       const data = await response.json();
-
-      if (
-        Array.isArray(data) &&
-        data.every((card) => card.question && card.answer)
-      ) {
+  
+      if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
         await addFlashcardDeck(deckName, JSON.stringify(data));
       } else {
         alert("Invalid flashcards format received.");
@@ -337,8 +329,9 @@ const DecksPage = () => {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
     }
-    setNumberOfCards(10);
+    setNumberOfCards(10)
   };
+  
 
   const handleFileChange = (e) => {
     e.preventDefault();
@@ -351,7 +344,6 @@ const DecksPage = () => {
   };
 
   const extractTextFromPDF = async (pdf) => {
-    console.log(pdf);
     const numPages = pdf.numPages;
     let text = "";
 
@@ -370,14 +362,12 @@ const DecksPage = () => {
     if (file) {
       try {
         if (requestNumber <= 0) {
-          handlePrompt();
-          return;
+          handlePrompt(); 
+          return; 
         }
-        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
-          .promise;
+        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
         // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
         // // .promise;
-        console.log("PDF submit: ", pdf);
         const text = await extractTextFromPDF(pdf);
         setExtractedText(text);
       } catch (error) {
@@ -385,8 +375,8 @@ const DecksPage = () => {
       }
     } else {
       if (requestNumber <= 0) {
-        handlePrompt();
-        return;
+        handlePrompt(); 
+        return; 
       }
       alert("No File Selected");
     }
@@ -413,28 +403,24 @@ const DecksPage = () => {
       return;
     }
     if (requestNumber <= 0) {
-      handlePrompt();
-      return;
+      handlePrompt(); 
+      return; 
     }
     try {
-      let deckContent = extractedText;
-      const validNumberCards = isNaN(numberCardPDF)
-        ? 10
-        : numberCardPDF < 1
-        ? 1
-        : numberCardPDF > 40
-        ? 40
-        : numberCardPDF;
+
+      let deckContent = extractedText
+      const validNumberCards = (isNaN(numberCardPDF) ? 10 : numberCardPDF < 1 ? 1 : numberCardPDF > 40 ? 40 : numberCardPDF);
 
       const requestBody = {
         deckContent,
-        numberCards: parseInt(validNumberCards),
+        numberCards: parseInt(validNumberCards), 
       };
 
       const response = await fetch("api/generate", {
         method: "POST",
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(requestBody), 
       });
+  
 
       if (!response.ok) {
         throw new Error("Failed to fetch flashcards.");
@@ -462,8 +448,10 @@ const DecksPage = () => {
     setExtractedText("");
     setFileName("");
     setFile(null);
-    setNumberOfCardPDF(10);
+    setNumberOfCardPDF(10)
   };
+
+  
 
   return (
     <>
