@@ -24,7 +24,7 @@ function Landing() {
   ];
 
   const basicPlan = [
-    "Save up to 4 decks",
+    "Save up to 5 decks",
     "Create up to 10 flashcards per deck",
     "Generate flashcards with description or PDF",
     "Customize the deck's title and content",
@@ -32,12 +32,13 @@ function Landing() {
   ]
 
   const premiumPlan = [
+    "Everything in basic plan plus:",
     "Save an unlimited amount of decks",
     "Hold up to 40 cards in each deck",
     "Generate flashcards with description or pdf",
     "Generate multiple choice test quizzes up to 20 questions",
-    "Share/import decks with other users",
-    "3 one time use premium free trial code for 2 weeks",
+    // "Share/import decks with other users",
+    // "3 one time use premium free trial code for 2 weeks",
   ]
 
   const closeModal = () => setIsModalOpen(false);
