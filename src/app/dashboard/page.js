@@ -30,7 +30,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
-import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
+// import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
 import { getPremiumStatus } from "../account/PremiumStatus";
 
 const DecksPage = () => {
@@ -54,7 +54,13 @@ const DecksPage = () => {
   const fileInputRef = useRef(null)
   const currentUser = useSelector(selectUser);
 
-
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      import("pdfjs-dist/webpack").then((pdfjsLib) => {
+        console.log("pdfjsLib loaded successfully on client side", pdfjsLib);
+      });
+    }
+  }, []);
 
   const fetchDecks = async () => {
     try {
@@ -279,7 +285,7 @@ const DecksPage = () => {
   };
 
   const handlePrompt = () => {
-    return alert('Free trial is over must enroll into premium to keep using the site')
+    return alert('Limited to 5 saved decks on basic package.')
   }
 
   const handleSubmit = async (e) => {
