@@ -30,7 +30,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
-import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
+// import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
 import { getPremiumStatus } from "../account/PremiumStatus";
 
 const DecksPage = () => {
@@ -54,7 +54,13 @@ const DecksPage = () => {
   const fileInputRef = useRef(null)
   const currentUser = useSelector(selectUser);
 
-
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      import("pdfjs-dist/webpack").then((pdfjsLib) => {
+        console.log("pdfjsLib loaded successfully on client side", pdfjsLib);
+      });
+    }
+  }, []);
 
   const fetchDecks = async () => {
     try {
@@ -82,7 +88,6 @@ const DecksPage = () => {
   useEffect(() => {
     const checkPremiumStatus = async() => {
       const premiumStatus = await getPremiumStatus(currentUser)
-      console.log(premiumStatus)
       setStatus(premiumStatus);
     }
     if (currentUser?.currentUser) {
@@ -145,11 +150,9 @@ const DecksPage = () => {
     setEditDeckName(deck.id);
     setEditDeckContent(deck.content.map(item => `Question: ${item.question}\nAnswer: ${item.answer}`).join('\n\n'));
     setIsEditing(true);
-    console.log(currentDeck);
   };
 
   const handleSave = async () => {
-    console.log(currentDeck);
     try {
       const userCollectionRef = collection(
         firestore,
@@ -235,7 +238,7 @@ const DecksPage = () => {
       if (status === false) {
         currentNumber += 1;
       }
-      console.log("Updated number after deletion:", currentNumber);
+  
       setRequestNumber(currentNumber);
   
       // Add the number field update to the batch
@@ -279,7 +282,7 @@ const DecksPage = () => {
   };
 
   const handlePrompt = () => {
-    return alert('Free trial is over must enroll into premium to keep using the site')
+    return alert('Limited to 5 saved decks on basic package.')
   }
 
   const handleSubmit = async (e) => {
@@ -334,7 +337,6 @@ const DecksPage = () => {
   };
 
   const extractTextFromPDF = async (pdf) => {
-    console.log(pdf)
     const numPages = pdf.numPages;
     let text = "";
 
@@ -359,7 +361,6 @@ const DecksPage = () => {
         const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
         // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
         // // .promise;
-        console.log('PDF submit: ', pdf)
         const text = await extractTextFromPDF(pdf);
         setExtractedText(text)
 
@@ -420,7 +421,6 @@ const DecksPage = () => {
       }
 
       const data = await response.json();
-      console.log(`data: ${data}`)
 
       if (
         Array.isArray(data) &&

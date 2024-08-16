@@ -46,14 +46,14 @@ function LandingPage() {
     try {
       const userDocRef = doc(firestore, "Users", userId);
       await updateDoc(userDocRef, { number: 5 });
-      console.log("Request number reset successfully.");
     } catch (error) {
       console.error("Error resetting request number:", error);
     }
   };
   
   const checkAndResetPremiumStatus = async (userId) => {
-    if (status) {
+    console.log(status)
+    if (status == 'Premium') {
       await resetRequestNumber(userId);
     }
   };
@@ -64,14 +64,9 @@ function LandingPage() {
     const checkoutUrl = await getCheckoutUrl(priceId, user?.currentUser.id);
     // Redirect to Stripe Checkout
     router.push(checkoutUrl);
-    
-   
-  
-    await checkAndResetPremiumStatus(user?.currentUser.id);
-    
   } catch (error) {
     console.error("Error upgrading to premium:", error);
-  }
+  } 
 };
 
   const handleManageSubscription = async() => {
@@ -84,13 +79,13 @@ function LandingPage() {
   useEffect(() => {
     const checkPremiumStatus = async() => {
       const premiumStatus = await getPremiumStatus(user)
-      console.log(premiumStatus)
       setStatus(premiumStatus ? "Premium" : "Basic");
+      await checkAndResetPremiumStatus(user?.currentUser?.id)
     }
     if (user?.currentUser) {
       checkPremiumStatus();
     }
-  }, [user])
+  }, [user, status])
 
   // const handleCheckout = async () => {
   //   console.log('hitting checkout')

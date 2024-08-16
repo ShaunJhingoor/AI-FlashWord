@@ -6,7 +6,6 @@ export async function POST(req) {
     const openai = new OpenAI();
     const { deckContent, numberCards } = await req.json(); // Parse JSON body
 
-    console.log(numberCards)
     // Update the system prompt to generate the specified number of cards
     const systemPrompt = `
       You are a flashcard creator. You take in text and create multiple flashcards from it. 
