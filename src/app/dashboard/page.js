@@ -690,7 +690,7 @@ const DecksPage = () => {
 
           {status ? (
             <button className="w-[90%] m-auto bg-gradient-to-t from-[#323232] to-[#111111] border-[0.15vh] border-[#FFFFFF] text-[3vh] rounded-full py-[1.5vh] font-bold">
-              you're subscribed
+              {`you're subscribed`}
             </button>
           ) : (
             <button
