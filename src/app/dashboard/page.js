@@ -752,7 +752,7 @@ const DecksPage = () => {
         sx={{
           backgroundColor: "transparent",
           ".MuiPaper-root": {
-            backgroundColor: "#FAC9BF",
+            backgroundColor: "#111111",
           },
         }}
       >
