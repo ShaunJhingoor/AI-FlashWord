@@ -22,23 +22,28 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
-  getDoc, 
+  getDoc,
   writeBatch,
 } from "firebase/firestore";
 import { firestore } from "../../firebase/config";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/userSlice";
+import { getCheckoutUrl, getPortalUrl } from "../account/stripePayment";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
+import { useRouter } from "next/navigation";
+
 // import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
 import { getPremiumStatus } from "../account/PremiumStatus";
 
 const DecksPage = () => {
+  const router = useRouter();
   const [decks, setDecks] = useState([]);
   const [deckName, setDeckName] = useState("");
+  // const [deckNamePDF, setDeckNamePDF] = useState("");
   const [deckContent, setDeckContent] = useState("");
   const [editDeckName, setEditDeckName] = useState("");
   const [editDeckContent, setEditDeckContent] = useState("");
@@ -50,19 +55,35 @@ const DecksPage = () => {
   const [file, setFile] = useState(null);
   const [extractedText, setExtractedText] = useState("");
   const [fileName, setFileName] = useState("");
-  const [status, setStatus] = useState("")
-  const [requestNumber, setRequestNumber] = useState(5)
-  const [numberCards, setNumberOfCards] = useState(10)
-  const [numberCardPDF, setNumberOfCardPDF] = useState(10)
-  const fileInputRef = useRef(null)
+  const [status, setStatus] = useState("");
+  const [requestNumber, setRequestNumber] = useState(5);
+  const [numberCards, setNumberOfCards] = useState(10);
+  const [numberCardPDF, setNumberOfCardPDF] = useState(10);
+  const fileInputRef = useRef(null);
   const currentUser = useSelector(selectUser);
 
+  const basicPlan = [
+    "Save up to 5 decks",
+    "Create up to 10 flashcards per deck",
+    "Generate flashcards with description or PDF",
+    "Customize the deck's title and content",
+    "Generate custom flashcards with manual input",
+  ];
+
+  const premiumPlan = [
+    "Everything in basic plan plus:",
+    "Save an unlimited amount of decks",
+    "Hold up to 40 cards in each deck",
+    "Generate flashcards with description or pdf",
+    // "Generate multiple choice test quizzes up to 20 questions",
+    // "Share/import decks with other users",
+    // "3 one time use premium free trial code for 2 weeks",
+  ];
+
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      import("pdfjs-dist/webpack").then((pdfjsLib) => {
-        console.log("pdfjsLib loaded successfully on client side", pdfjsLib);
-      });
-    }
+    import("pdfjs-dist/webpack").then((pdfjsLib) => {
+      console.log("pdfjsLib loaded successfully on client side", pdfjsLib);
+    });
   }, []);
 
   const fetchDecks = async () => {
@@ -89,14 +110,14 @@ const DecksPage = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    const checkPremiumStatus = async() => {
-      const premiumStatus = await getPremiumStatus(currentUser)
+    const checkPremiumStatus = async () => {
+      const premiumStatus = await getPremiumStatus(currentUser);
       setStatus(premiumStatus);
-    }
+    };
     if (currentUser?.currentUser) {
       checkPremiumStatus();
     }
-  }, [currentUser])
+  }, [currentUser]);
 
   const addFlashcardDeck = async (name, content) => {
     try {
@@ -104,38 +125,38 @@ const DecksPage = () => {
         alert("Deck name or content is missing.");
         return;
       }
-  
+
       // Reference to the user's document
       const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
-      
+
       // Fetch the current document data
       const userDocSnap = await getDoc(userDocRef);
       let currentNumber = 5; // Default starting number
-  
+
       if (userDocSnap.exists()) {
         // Retrieve current number value
         const data = userDocSnap.data();
         currentNumber = data?.number || 5;
       }
-  
+
       // Create a batch to perform multiple operations atomically
       const batch = writeBatch(firestore);
-  
+
       // Reference to the new deck document within the flashcards collection
       const deckDocRef = doc(collection(userDocRef, "flashcards"), name);
-      
+
       // Add the new deck content
       batch.set(deckDocRef, { content: JSON.parse(content) });
-  
+
       // Decrement the number field and update it in the user's document
       if (status === false) {
-       currentNumber -=  1
+        currentNumber -= 1;
       }
-      setRequestNumber(currentNumber)
-      batch.set(userDocRef, { number: currentNumber }, { merge: true })
+      setRequestNumber(currentNumber);
+      batch.set(userDocRef, { number: currentNumber }, { merge: true });
       // Commit the batch
       await batch.commit();
-  
+
       alert("Deck added successfully!");
       setDeckName("");
       setDeckContent("");
@@ -144,10 +165,7 @@ const DecksPage = () => {
       console.error("Error adding deck:", error);
     }
   };
-  
-  
-  
-  
+
   const handleEdit = (deck) => {
     setCurrentDeck(deck);
     setEditDeckName(deck.id);
@@ -223,44 +241,43 @@ const DecksPage = () => {
         "flashcards"
       );
       const docRef = doc(userCollectionRef, deckName);
-  
+
       // Fetch current user's document to get the current number
       const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
       const userDocSnap = await getDoc(userDocRef);
-      let currentNumber = 5; 
-  
+      let currentNumber = 5;
+
       if (userDocSnap.exists()) {
         // Retrieve current number value
         const data = userDocSnap.data();
         currentNumber = data?.number;
       }
-  
+
       // Create a batch to perform multiple operations atomically
       const batch = writeBatch(firestore);
-  
+
       // Add the deck deletion to the batch
       batch.delete(docRef);
-  
+
       // Update the number field by incrementing it
       if (status === false) {
         currentNumber += 1;
       }
-  
+
       setRequestNumber(currentNumber);
-  
+
       // Add the number field update to the batch
       batch.set(userDocRef, { number: currentNumber }, { merge: true });
-  
+
       // Commit the batch
       await batch.commit();
-  
+
       alert("Deck deleted successfully!");
       fetchDecks();
     } catch (error) {
       console.error("Error deleting deck:", error);
     }
   };
-  
 
   const handleDeckClick = (deck) => {
     setCurrentDeck(deck);
@@ -285,42 +302,50 @@ const DecksPage = () => {
       setCurrentCardIndex(currentCardIndex - 1);
       setIsFlipped(false);
     }
-
   };
 
   const handlePrompt = () => {
-    return alert('Limited to 5 saved decks on basic package.')
-  }
+    return alert("Limited to 5 saved decks on basic package.");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (requestNumber <= 0) {
-        handlePrompt(); 
-        return; 
+        handlePrompt();
+        return;
       }
-      const validNumberCards = (isNaN(numberCards) ? 10 : numberCards < 1 ? 1 : numberCards > 40 ? 40 : numberCards);
-     
+      const validNumberCards = isNaN(numberCards)
+        ? 10
+        : numberCards < 1
+        ? 1
+        : numberCards > 40
+        ? 40
+        : numberCards;
+
       const requestBody = {
         deckContent,
-        numberCards: parseInt(validNumberCards), 
+        numberCards: parseInt(validNumberCards),
       };
-  
+
       const response = await fetch("api/generate", {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json' 
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody), 
+        body: JSON.stringify(requestBody),
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to fetch flashcards.");
       }
-  
+
       const data = await response.json();
-  
-      if (Array.isArray(data) && data.every(card => card.question && card.answer)) {
+
+      if (
+        Array.isArray(data) &&
+        data.every((card) => card.question && card.answer)
+      ) {
         await addFlashcardDeck(deckName, JSON.stringify(data));
       } else {
         alert("Invalid flashcards format received.");
@@ -329,9 +354,9 @@ const DecksPage = () => {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
     }
-    setNumberOfCards(10)
+    setNumberOfCards(10);
+    setDeckName("");
   };
-  
 
   const handleFileChange = (e) => {
     e.preventDefault();
@@ -362,10 +387,11 @@ const DecksPage = () => {
     if (file) {
       try {
         if (requestNumber <= 0) {
-          handlePrompt(); 
-          return; 
+          handlePrompt();
+          return;
         }
-        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+        const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
+          .promise;
         // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
         // // .promise;
         const text = await extractTextFromPDF(pdf);
@@ -375,8 +401,8 @@ const DecksPage = () => {
       }
     } else {
       if (requestNumber <= 0) {
-        handlePrompt(); 
-        return; 
+        handlePrompt();
+        return;
       }
       alert("No File Selected");
     }
@@ -403,24 +429,30 @@ const DecksPage = () => {
       return;
     }
     if (requestNumber <= 0) {
-      handlePrompt(); 
-      return; 
+      handlePrompt();
+      return;
     }
     try {
-
-      let deckContent = extractedText
-      const validNumberCards = (isNaN(numberCardPDF) ? 10 : numberCardPDF < 1 ? 1 : numberCardPDF > 40 ? 40 : numberCardPDF);
+      let deckContent = extractedText;
+      const validNumberCards = isNaN(numberCardPDF)
+        ? 10
+        : numberCardPDF < 1
+        ? 1
+        : numberCardPDF > 40
+        ? 40
+        : numberCardPDF;
 
       const requestBody = {
         deckContent,
-        numberCards: parseInt(validNumberCards), 
+        numberCards: parseInt(validNumberCards),
       };
+
+      console.log(requestBody);
 
       const response = await fetch("api/generate", {
         method: "POST",
-        body: JSON.stringify(requestBody), 
+        body: JSON.stringify(requestBody),
       });
-  
 
       if (!response.ok) {
         throw new Error("Failed to fetch flashcards.");
@@ -448,10 +480,20 @@ const DecksPage = () => {
     setExtractedText("");
     setFileName("");
     setFile(null);
-    setNumberOfCardPDF(10)
+    setNumberOfCardPDF(10);
   };
 
-  
+  const handleUpgradeToPremium = async () => {
+    const priceId = "price_1Pnnf7DM3EY2E0WOjkZvgNbV";
+    try {
+      const checkoutUrl = await getCheckoutUrl(priceId, currentUser?.currentUser.id);
+      // Redirect to Stripe Checkout
+      console.log(checkoutUrl)
+      router.push(checkoutUrl);
+    } catch (error) {
+      console.error("Error upgrading to premium:", error);
+    }
+  };
 
   return (
     <>
@@ -470,6 +512,7 @@ const DecksPage = () => {
                   type="text"
                   label="Deck Name"
                   aria-label="Deck Name"
+                  value={deckName}
                   onChange={(e) => setDeckName(e.target.value)}
                   placeholder="Enter Deck Title"
                   className="w-full h-[5vh] text-[5vh] text-white font-bold bg-transparent border-none outline-none placeholder-[#989898]"
@@ -507,7 +550,7 @@ const DecksPage = () => {
                     value={numberCards}
                     onChange={(e) => setNumberOfCards(e.target.value)}
                     maxLength={40}
-                    className="lowercase transition-all ease-in-out text-black placeholder:text-[#383838] underline text-[2vh] font-semibold text-center placeholder:text-[2vh] w-[10%] p-[2vh]"
+                    className="lowercase transition-all ease-in-out text-black placeholder:text-[#383838] underline text-[2vh] font-semibold text-center placeholder:text-[2vh] w-[20%] py-[2vh] "
                     minLength={1}
                   />
                 </>
@@ -525,15 +568,15 @@ const DecksPage = () => {
           <div className="flex flex-col justify-center items-center gap-[2vh]">
             <div className="h-[50vh] relative bg-gradient-to-b from-[#D9D9D9] to-[#E3E3E3] shadowStroke dropShadow w-[60vh] flex flex-col justify-start items-center gap-[4vh] px-[4vh] py-[4vh] rounded-[2vh]">
               <div className="flex flex-col justify-start w-full gap-[1vh]">
-                <input
-                  type="text"
-                  label="Deck Name"
-                  aria-label="Deck Name"
-                  onChange={(e) => setDeckName(e.target.value)}
-                  placeholder="Enter Deck Title"
-                  className="w-full h-[5vh] text-[5vh] text-white font-bold bg-transparent border-none outline-none placeholder-[#989898]"
-                  required
-                />
+                {fileName ? (
+                  <h1 className="w-full text-[5vh] text-[#989898] font-bold bg-transparent border-none outline-none">
+                    {fileName}
+                  </h1>
+                ) : (
+                  <h1 className="w-full text-[5vh] text-[#989898] font-bold bg-transparent border-none outline-none">
+                    Upload PDF
+                  </h1>
+                )}
                 <h3 className="text-[2vh] text-[#989898] font-medium capitalize">
                   upload PDF to generate deck
                 </h3>
@@ -569,7 +612,7 @@ const DecksPage = () => {
                     value={numberCardPDF}
                     onChange={(e) => setNumberOfCardPDF(e.target.value)}
                     maxLength={40}
-                    className="lowercase transition-all ease-in-out text-black placeholder:text-[#383838] underline text-[2vh] font-semibold text-center placeholder:text-[2vh] w-[10%] p-[2vh]"
+                    className="lowercase transition-all ease-in-out text-black placeholder:text-[#383838] underline text-[2vh] font-semibold text-center placeholder:text-[2vh] w-[20%] p-[2vh]"
                     minLength={1}
                   />
                 </>
@@ -616,6 +659,50 @@ const DecksPage = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="flex justify-around w-full bottom-0 z-0 pt-[8vh]">
+        <div className="bg-gradient-to-t from-[#D9D9D9] to-[#ffffff] rounded-t-[4vh] flex flex-col w-[60vh] p-[4vh] gap-[2vh] dropShadow">
+          <div>
+            <h2 className="text-[4vh] font-bold capitalize">basic</h2>
+            <h3>for the newbies</h3>
+          </div>
+
+          <h2 className="text-[6vh] font-bold capitalize">Free</h2>
+
+          <button className="w-[90%] m-auto bg-[#CACACA] border-[0.15vh] border-[#FFFFFF] text-[3vh] rounded-full py-[1.5vh] font-bold">
+            forever
+          </button>
+          {basicPlan.map((plan) => (
+            <li>{plan}</li>
+          ))}
+        </div>
+
+        <div className="bg-gradient-to-t from-[#323232] to-[#111111] rounded-t-[4vh] flex flex-col w-[60vh] p-[4vh] gap-[2vh] dropShadow text-white">
+          <div>
+            <h2 className="text-[4vh] font-bold capitalize">premium</h2>
+            <h3>for the more adventurous ones</h3>
+          </div>
+
+          <h2 className="text-[6vh] font-bold capitalize">$10</h2>
+
+          {status ? (
+            <button className="w-[90%] m-auto bg-gradient-to-t from-[#323232] to-[#111111] border-[0.15vh] border-[#FFFFFF] text-[3vh] rounded-full py-[1.5vh] font-bold">
+              you're subscribed
+            </button>
+          ) : (
+            <button
+              onClick={handleUpgradeToPremium}
+              className="w-[90%] m-auto bg-gradient-to-t from-[#323232] to-[#111111] border-[0.15vh] border-[#FFFFFF] text-[3vh] rounded-full py-[1.5vh] font-bold"
+            >
+              subscribe
+            </button>
+          )}
+         
+          {premiumPlan.map((plan) => (
+            <li>{plan}</li>
+          ))}
+        </div>
       </div>
 
       {/* Edit Deck Modal */}

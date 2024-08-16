@@ -5,6 +5,9 @@ import LoginPage from "../Components/login";
 import SignUpPage from "../Components/signUp";
 
 function Landing() {
+  // Future itteration make it component based where subscriptions display is a component
+  // Stripe checkout url is a component
+  // And we will pass down props to make the code cleaner and more readable
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
 
@@ -36,7 +39,7 @@ function Landing() {
     "Save an unlimited amount of decks",
     "Hold up to 40 cards in each deck",
     "Generate flashcards with description or pdf",
-    "Generate multiple choice test quizzes up to 20 questions",
+    // "Generate multiple choice test quizzes up to 20 questions",
     // "Share/import decks with other users",
     // "3 one time use premium free trial code for 2 weeks",
   ]
@@ -143,7 +146,8 @@ function Landing() {
 
             <h2 className="text-[6vh] font-bold capitalize">$10</h2>
 
-            <button className="w-[90%] m-auto bg-gradient-to-t from-[#323232] to-[#111111] border-[0.15vh] border-[#FFFFFF] text-[3vh] rounded-full py-[1.5vh] font-bold">
+            <button 
+            className="w-[90%] m-auto bg-gradient-to-t from-[#323232] to-[#111111] border-[0.15vh] border-[#FFFFFF] text-[3vh] rounded-full py-[1.5vh] font-bold">
               subscribe
             </button>
             {premiumPlan.map((plan) => (
