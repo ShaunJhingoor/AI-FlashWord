@@ -88,7 +88,6 @@ const DecksPage = () => {
   useEffect(() => {
     const checkPremiumStatus = async() => {
       const premiumStatus = await getPremiumStatus(currentUser)
-      console.log(premiumStatus)
       setStatus(premiumStatus);
     }
     if (currentUser?.currentUser) {
@@ -151,11 +150,9 @@ const DecksPage = () => {
     setEditDeckName(deck.id);
     setEditDeckContent(deck.content.map(item => `Question: ${item.question}\nAnswer: ${item.answer}`).join('\n\n'));
     setIsEditing(true);
-    console.log(currentDeck);
   };
 
   const handleSave = async () => {
-    console.log(currentDeck);
     try {
       const userCollectionRef = collection(
         firestore,
@@ -241,7 +238,7 @@ const DecksPage = () => {
       if (status === false) {
         currentNumber += 1;
       }
-      console.log("Updated number after deletion:", currentNumber);
+  
       setRequestNumber(currentNumber);
   
       // Add the number field update to the batch
@@ -340,7 +337,6 @@ const DecksPage = () => {
   };
 
   const extractTextFromPDF = async (pdf) => {
-    console.log(pdf)
     const numPages = pdf.numPages;
     let text = "";
 
@@ -365,7 +361,6 @@ const DecksPage = () => {
         const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
         // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
         // // .promise;
-        console.log('PDF submit: ', pdf)
         const text = await extractTextFromPDF(pdf);
         setExtractedText(text)
 
@@ -426,7 +421,6 @@ const DecksPage = () => {
       }
 
       const data = await response.json();
-      console.log(`data: ${data}`)
 
       if (
         Array.isArray(data) &&

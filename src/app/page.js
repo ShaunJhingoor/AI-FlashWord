@@ -46,7 +46,6 @@ function LandingPage() {
     try {
       const userDocRef = doc(firestore, "Users", userId);
       await updateDoc(userDocRef, { number: 5 });
-      console.log("Request number reset successfully.");
     } catch (error) {
       console.error("Error resetting request number:", error);
     }
@@ -84,7 +83,6 @@ function LandingPage() {
   useEffect(() => {
     const checkPremiumStatus = async() => {
       const premiumStatus = await getPremiumStatus(user)
-      console.log(premiumStatus)
       setStatus(premiumStatus ? "Premium" : "Basic");
     }
     if (user?.currentUser) {
