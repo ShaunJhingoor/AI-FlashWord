@@ -673,8 +673,10 @@ const DecksPage = () => {
           <button className="w-[90%] m-auto bg-[#CACACA] border-[0.15vh] border-[#FFFFFF] text-[3vh] rounded-full py-[1.5vh] font-bold">
             forever
           </button>
-          {basicPlan.map((plan) => (
-            <li>{plan}</li>
+          {basicPlan.map((plan, id) => (
+            <li
+            key={id}
+            >{plan}</li>
           ))}
         </div>
 
@@ -699,8 +701,9 @@ const DecksPage = () => {
             </button>
           )}
          
-          {premiumPlan.map((plan) => (
-            <li>{plan}</li>
+          {premiumPlan.map((plan, id) => (
+            <li
+            key={id}>{plan}</li>
           ))}
         </div>
       </div>
