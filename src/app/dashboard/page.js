@@ -1,5 +1,7 @@
 "use client";
 
+"use client";
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
@@ -20,6 +22,8 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
+  getDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { firestore } from "../../firebase/config";
 import { useSelector } from "react-redux";
@@ -29,8 +33,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
-import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
-import { getDocument } from "pdfjs-dist";
+// import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
+import { getPremiumStatus } from "../account/PremiumStatus";
 
 const DecksPage = () => {
   const [decks, setDecks] = useState([]);
@@ -46,8 +50,20 @@ const DecksPage = () => {
   const [file, setFile] = useState(null);
   const [extractedText, setExtractedText] = useState("");
   const [fileName, setFileName] = useState("");
+  const [status, setStatus] = useState("");
+  const [requestNumber, setRequestNumber] = useState(5);
+  const [numberCards, setNumberOfCards] = useState(10);
+  const [numberCardPDF, setNumberOfCardPDF] = useState(10);
   const fileInputRef = useRef(null);
   const currentUser = useSelector(selectUser);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      import("pdfjs-dist/webpack").then((pdfjsLib) => {
+        console.log("pdfjsLib loaded successfully on client side", pdfjsLib);
+      });
+    }
+  }, []);
 
   const fetchDecks = async () => {
     try {
@@ -72,21 +88,55 @@ const DecksPage = () => {
     fetchDecks();
   }, [currentUser]);
 
+  useEffect(() => {
+    const checkPremiumStatus = async () => {
+      const premiumStatus = await getPremiumStatus(currentUser);
+      console.log(premiumStatus);
+      setStatus(premiumStatus);
+    };
+    if (currentUser?.currentUser) {
+      checkPremiumStatus();
+    }
+  }, [currentUser]);
+
   const addFlashcardDeck = async (name, content) => {
     try {
       if (!name || !content) {
         alert("Deck name or content is missing.");
         return;
       }
-      const userCollectionRef = collection(
-        firestore,
-        "Users",
-        currentUser?.currentUser.id,
-        "flashcards"
-      );
-      const docRef = doc(userCollectionRef, name);
 
-      await setDoc(docRef, { content: JSON.parse(content) });
+      // Reference to the user's document
+      const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
+
+      // Fetch the current document data
+      const userDocSnap = await getDoc(userDocRef);
+      let currentNumber = 5; // Default starting number
+
+      if (userDocSnap.exists()) {
+        // Retrieve current number value
+        const data = userDocSnap.data();
+        currentNumber = data?.number || 5;
+      }
+
+      // Create a batch to perform multiple operations atomically
+      const batch = writeBatch(firestore);
+
+      // Reference to the new deck document within the flashcards collection
+      const deckDocRef = doc(collection(userDocRef, "flashcards"), name);
+
+      // Add the new deck content
+      batch.set(deckDocRef, { content: JSON.parse(content) });
+
+      // Decrement the number field and update it in the user's document
+      if (status === false) {
+        currentNumber -= 1;
+      }
+      setRequestNumber(currentNumber);
+      batch.set(userDocRef, { number: currentNumber }, { merge: true });
+      // Commit the batch
+      await batch.commit();
+
       alert("Deck added successfully!");
       setDeckName("");
       setDeckContent("");
@@ -173,7 +223,37 @@ const DecksPage = () => {
         "flashcards"
       );
       const docRef = doc(userCollectionRef, deckName);
-      await deleteDoc(docRef);
+
+      // Fetch current user's document to get the current number
+      const userDocRef = doc(firestore, "Users", currentUser?.currentUser.id);
+      const userDocSnap = await getDoc(userDocRef);
+      let currentNumber = 5;
+
+      if (userDocSnap.exists()) {
+        // Retrieve current number value
+        const data = userDocSnap.data();
+        currentNumber = data?.number;
+      }
+
+      // Create a batch to perform multiple operations atomically
+      const batch = writeBatch(firestore);
+
+      // Add the deck deletion to the batch
+      batch.delete(docRef);
+
+      // Update the number field by incrementing it
+      if (status === false) {
+        currentNumber += 1;
+      }
+      console.log("Updated number after deletion:", currentNumber);
+      setRequestNumber(currentNumber);
+
+      // Add the number field update to the batch
+      batch.set(userDocRef, { number: currentNumber }, { merge: true });
+
+      // Commit the batch
+      await batch.commit();
+
       alert("Deck deleted successfully!");
       fetchDecks();
     } catch (error) {
@@ -206,12 +286,37 @@ const DecksPage = () => {
     }
   };
 
+  const handlePrompt = () => {
+    return alert('Free trial is over must enroll into premium to keep using the site')
+    return alert('Limited to 5 saved decks on basic package.')
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      if (requestNumber <= 0) {
+        handlePrompt();
+        return;
+      }
+      const validNumberCards = isNaN(numberCards)
+        ? 10
+        : numberCards < 1
+        ? 1
+        : numberCards > 40
+        ? 40
+        : numberCards;
+
+      const requestBody = {
+        deckContent,
+        numberCards: parseInt(validNumberCards),
+      };
+
       const response = await fetch("api/generate", {
         method: "POST",
-        body: deckContent,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -220,7 +325,6 @@ const DecksPage = () => {
 
       const data = await response.json();
 
-      // Check if flashcards data is in expected format
       if (
         Array.isArray(data) &&
         data.every((card) => card.question && card.answer)
@@ -233,6 +337,7 @@ const DecksPage = () => {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
     }
+    setNumberOfCards(10);
   };
 
   const handleFileChange = (e) => {
@@ -264,6 +369,10 @@ const DecksPage = () => {
     e.preventDefault();
     if (file) {
       try {
+        if (requestNumber <= 0) {
+          handlePrompt();
+          return;
+        }
         const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
           .promise;
         // const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
@@ -275,6 +384,10 @@ const DecksPage = () => {
         console.error("Error extracting text from PDF:", error);
       }
     } else {
+      if (requestNumber <= 0) {
+        handlePrompt();
+        return;
+      }
       alert("No File Selected");
     }
   };
@@ -299,10 +412,28 @@ const DecksPage = () => {
       alert("Extracted text or file name is missing.");
       return;
     }
+    if (requestNumber <= 0) {
+      handlePrompt();
+      return;
+    }
     try {
+      let deckContent = extractedText;
+      const validNumberCards = isNaN(numberCardPDF)
+        ? 10
+        : numberCardPDF < 1
+        ? 1
+        : numberCardPDF > 40
+        ? 40
+        : numberCardPDF;
+
+      const requestBody = {
+        deckContent,
+        numberCards: parseInt(validNumberCards),
+      };
+
       const response = await fetch("api/generate", {
         method: "POST",
-        body: extractedText,
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -310,6 +441,7 @@ const DecksPage = () => {
       }
 
       const data = await response.json();
+      console.log(`data: ${data}`);
 
       if (
         Array.isArray(data) &&
@@ -323,7 +455,6 @@ const DecksPage = () => {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
     } finally {
-      // Clear the file input field after processing
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -331,6 +462,7 @@ const DecksPage = () => {
     setExtractedText("");
     setFileName("");
     setFile(null);
+    setNumberOfCardPDF(10);
   };
 
   return (
@@ -371,16 +503,27 @@ const DecksPage = () => {
                 ></textarea>
               </div>
             </div>
+
             <div className="flex inset-0 justify-center items-center w-[60vh]">
-              <div className="flex-1 w-full">
-                <h2 className="text-[3vh] text-[#989898]">how many cards?</h2>
-              </div>
-              <input
-                type="text"
-                className="lowercase transition-all ease-in-out text-black placeholder:text-[#383838] underline text-[2vh] font-semibold text-center placeholder:text-[2vh] w-[10%] p-[2vh]"
-                placeholder="1"
-                maxLength="10"
-              />
+              {status && (
+                <>
+                  <div className="flex-1 w-full">
+                    <h2 className="text-[3vh] text-[#989898]">
+                      how many cards?
+                    </h2>
+                  </div>
+
+                  <input
+                    label="Number of Cards"
+                    type="number"
+                    value={numberCards}
+                    onChange={(e) => setNumberOfCards(e.target.value)}
+                    maxLength={40}
+                    className="lowercase transition-all ease-in-out text-black placeholder:text-[#383838] underline text-[2vh] font-semibold text-center placeholder:text-[2vh] w-[10%] p-[2vh]"
+                    minLength={1}
+                  />
+                </>
+              )}
               <button
                 onClick={(e) => handleSubmit(e)}
                 className="lowercase bg-[#383838] hover:bg-[#929292] transition-all ease-in-out text-[#FFFFFF] text-[2vh] font-semibold rounded-full px-[4vh] p-[2vh] box-border"
@@ -424,15 +567,26 @@ const DecksPage = () => {
               </div>
             </div>
             <div className="flex lowercase justify-around items-center gap-[2vh] w-[60vh]">
-              <div className="flex-1 w-full">
-                <h2 className="text-[3vh] text-[#989898]">how many cards?</h2>
-              </div>
-              <input
-                type="text"
-                className="lowercase transition-all ease-in-out text-black placeholder:text-[#383838] underline text-[2vh] font-semibold text-center placeholder:text-[2vh] w-[10%] p-[2vh]"
-                placeholder="1"
-                maxLength="10"
-              />
+              {status && (
+                <>
+                  <div className="flex-1 w-full">
+                    <h2 className="text-[3vh] text-[#989898]">
+                      how many cards?
+                    </h2>
+                  </div>
+
+                  <input
+                    label="Number of Cards"
+                    type="number"
+                    value={numberCardPDF}
+                    onChange={(e) => setNumberOfCardPDF(e.target.value)}
+                    maxLength={40}
+                    className="lowercase transition-all ease-in-out text-black placeholder:text-[#383838] underline text-[2vh] font-semibold text-center placeholder:text-[2vh] w-[10%] p-[2vh]"
+                    minLength={1}
+                  />
+                </>
+              )}
+
               <button
                 onClick={(e) => handleFileSubmit(e)}
                 className="lowercase bg-[#383838] hover:bg-[#929292] transition-all ease-in-out text-[#FFFFFF] text-[2vh] font-semibold rounded-full px-[4vh] p-[2vh] box-border"
@@ -447,26 +601,28 @@ const DecksPage = () => {
       <div className="grid grid-cols-3 w-[80%] m-auto gap-[5vh] pt-[4vh]">
         {decks.map((deck) => (
           <div
-          onClick={() => handleDeckClick(deck)}
+            onClick={() => handleDeckClick(deck)}
             key={deck.id}
             className="cursor-pointer flex flex-col gap-[2vh] shadowStroke justify-center items-center bg-gradient-to-b from-[#111111] to-[#323232] h-[40vh] rounded-[4vh]"
           >
-            <h1
-              className="text-[5vh] text-white font-semibold cursor-pointer"
-            >
+            <h1 className="text-[5vh] text-white font-semibold cursor-pointer">
               {deck.id}
             </h1>
             <div className="flex gap-[2vh] px-[5vh]">
-            <button onClick={(e) => {
-                e.stopPropagation(); 
-                handleEdit(deck);
-            }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(deck);
+                }}
+              >
                 <img src="/edit.png"></img>
               </button>
-              <button onClick={(e) => {
-                e.stopPropagation(); 
-                handleDelete(deck.id);
-            }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(deck.id);
+                }}
+              >
                 <img src="/delete.png"></img>
               </button>
             </div>
@@ -474,187 +630,185 @@ const DecksPage = () => {
         ))}
       </div>
 
-    
-        {/* Edit Deck Modal */}
-        <Dialog
-          open={isEditing}
-          onClose={() => setIsEditing(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Edit Deck</DialogTitle>
-          <DialogContent>
-            <TextField
-              label="Deck Name"
-              variant="outlined"
-              fullWidth
-              value={editDeckName}
-              onChange={(e) => setEditDeckName(e.target.value)}
-              margin="normal"
-            />
-            <TextField
-              label="Deck Content"
-              variant="outlined"
-              fullWidth
-              multiline
-              rows={8}
-              value={editDeckContent}
-              onChange={(e) => setEditDeckContent(e.target.value)}
-              margin="normal"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setIsEditing(false)} color="primary">
-              Cancel
-            </Button>
-            <Button onClick={handleSave} color="primary">
-              Save Changes
-            </Button>
-          </DialogActions>
-        </Dialog>
+      {/* Edit Deck Modal */}
+      <Dialog
+        open={isEditing}
+        onClose={() => setIsEditing(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Deck</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Deck Name"
+            variant="outlined"
+            fullWidth
+            value={editDeckName}
+            onChange={(e) => setEditDeckName(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            label="Deck Content"
+            variant="outlined"
+            fullWidth
+            multiline
+            rows={8}
+            value={editDeckContent}
+            onChange={(e) => setEditDeckContent(e.target.value)}
+            margin="normal"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEditing(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleSave} color="primary">
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-        {/* Flashcard Modal */}
-        <Dialog
-          open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          maxWidth="md"
-          fullWidth
+      {/* Flashcard Modal */}
+      <Dialog
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        sx={{
+          backgroundColor: "transparent",
+          ".MuiPaper-root": {
+            backgroundColor: "#FAC9BF",
+          },
+        }}
+      >
+        <DialogTitle
           sx={{
-            backgroundColor: "transparent",
-            ".MuiPaper-root": {
-              backgroundColor: "#FAC9BF",
-            },
+            textAlign: "center",
+            fontWeight: "bold",
+            position: "relative",
+            color: "white",
+            fontSize: "3rem",
           }}
         >
-          <DialogTitle
+          {currentDeck && currentDeck.id}
+          <IconButton
+            onClick={() => setIsModalOpen(false)}
             sx={{
-              textAlign: "center",
-              fontWeight: "bold",
-              position: "relative",
-              color: "white",
-              fontSize: "3rem",
+              position: "absolute",
+              top: 8,
+              right: 8,
+              color: "#d32f2f",
             }}
           >
-            {currentDeck && currentDeck.id}
-            <IconButton
-              onClick={() => setIsModalOpen(false)}
-              sx={{
-                position: "absolute",
-                top: 8,
-                right: 8,
-                color: "#d32f2f",
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
 
-          <DialogContent
-            sx={{ textAlign: "center", backgroundColor: "inherit", p: 0 }}
+        <DialogContent
+          sx={{ textAlign: "center", backgroundColor: "inherit", p: 0 }}
+        >
+          <Box
+            sx={{
+              perspective: "1000px",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+              height: "30vh",
+              width: "70%",
+              transformStyle: "preserve-3d",
+              transition: "transform 0.6s",
+              transform: isFlipped ? "rotateY(180deg)" : "none",
+              marginBottom: "2rem",
+            }}
+            onClick={handleCardFlip}
           >
             <Box
               sx={{
-                perspective: "1000px",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
+                position: "absolute",
+                height: "100%",
+                width: "100%",
+                backfaceVisibility: "hidden",
+                display: "flex",
                 justifyContent: "center",
-                position: "relative",
-                height: "30vh",
-                width: "70%",
-                transformStyle: "preserve-3d",
-                transition: "transform 0.6s",
+                alignItems: "center",
+                fontSize: "2rem",
+                padding: "10px",
+                backgroundColor: "#fff",
+                borderRadius: "10px",
+                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
                 transform: isFlipped ? "rotateY(180deg)" : "none",
-                marginBottom: "2rem",
               }}
-              onClick={handleCardFlip}
             >
-              <Box
-                sx={{
-                  position: "absolute",
-                  height: "100%",
-                  width: "100%",
-                  backfaceVisibility: "hidden",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  fontSize: "2rem",
-                  padding: "10px",
-                  backgroundColor: "#fff",
-                  borderRadius: "10px",
-                  boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                  transform: isFlipped ? "rotateY(180deg)" : "none",
-                }}
-              >
-                {currentDeck && currentDeck.content[currentCardIndex].question}
-              </Box>
-              <Box
-                sx={{
-                  position: "absolute",
-                  height: "100%",
-                  width: "100%",
-                  backfaceVisibility: "hidden",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  fontSize: "2rem",
-                  padding: "10px",
-                  backgroundColor: "#fff",
-                  borderRadius: "10px",
-                  boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                  transform: "rotateY(180deg)",
-                }}
-              >
-                {currentDeck && currentDeck.content[currentCardIndex].answer}
-              </Box>
+              {currentDeck && currentDeck.content[currentCardIndex].question}
             </Box>
-          </DialogContent>
+            <Box
+              sx={{
+                position: "absolute",
+                height: "100%",
+                width: "100%",
+                backfaceVisibility: "hidden",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontSize: "2rem",
+                padding: "10px",
+                backgroundColor: "#fff",
+                borderRadius: "10px",
+                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                transform: "rotateY(180deg)",
+              }}
+            >
+              {currentDeck && currentDeck.content[currentCardIndex].answer}
+            </Box>
+          </Box>
+        </DialogContent>
 
-          <DialogActions sx={{ justifyContent: "center", padding: 0 }}>
-            <IconButton
-              onClick={handlePrevCard}
-              disabled={currentCardIndex === 0}
-              sx={{
-                position: "absolute",
-                left: 0,
-                top: "50%",
-                transform: "translateY(-50%)",
+        <DialogActions sx={{ justifyContent: "center", padding: 0 }}>
+          <IconButton
+            onClick={handlePrevCard}
+            disabled={currentCardIndex === 0}
+            sx={{
+              position: "absolute",
+              left: 0,
+              top: "50%",
+              transform: "translateY(-50%)",
+              backgroundColor: "#fff",
+              borderRadius: "50%",
+              boxShadow: 1,
+              "&:hover": {
+                boxShadow: 3,
+                backgroundColor: "#fff", // Adjust the shadow intensity as needed
+              },
+            }}
+          >
+            <ArrowBackIosIcon />
+          </IconButton>
+          <IconButton
+            onClick={handleNextCard}
+            disabled={
+              !currentDeck ||
+              currentCardIndex === currentDeck.content.length - 1
+            }
+            sx={{
+              position: "absolute",
+              right: 0,
+              top: "50%",
+              transform: "translateY(-50%)",
+              backgroundColor: "#fff",
+              borderRadius: "50%",
+              boxShadow: 1,
+              "&:hover": {
+                boxShadow: 3,
                 backgroundColor: "#fff",
-                borderRadius: "50%",
-                boxShadow: 1,
-                "&:hover": {
-                  boxShadow: 3,
-                  backgroundColor: "#fff", // Adjust the shadow intensity as needed
-                },
-              }}
-            >
-              <ArrowBackIosIcon />
-            </IconButton>
-            <IconButton
-              onClick={handleNextCard}
-              disabled={
-                !currentDeck ||
-                currentCardIndex === currentDeck.content.length - 1
-              }
-              sx={{
-                position: "absolute",
-                right: 0,
-                top: "50%",
-                transform: "translateY(-50%)",
-                backgroundColor: "#fff",
-                borderRadius: "50%",
-                boxShadow: 1,
-                "&:hover": {
-                  boxShadow: 3,
-                  backgroundColor: "#fff",
-                },
-              }}
-            >
-              <ArrowForwardIosIcon />
-            </IconButton>
-          </DialogActions>
-          
-        </Dialog>
+              },
+            }}
+          >
+            <ArrowForwardIosIcon />
+          </IconButton>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
