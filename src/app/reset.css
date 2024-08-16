@@ -20,6 +20,7 @@ article, aside, canvas, details, embed,
 figure, figcaption, footer, header, hgroup, 
 menu, nav, output, ruby, section, summary,
 time, mark, audio, video {
+    letter-spacing: -0.07em;
     margin: 0;
     padding: 0;
     border: 0;
@@ -35,6 +36,7 @@ footer, header, hgroup, menu, nav, section {
 
 body {
     line-height: 1;
+    overflow-x: hidden;
 }
 ol, ul {
     list-style: none;
@@ -50,4 +52,24 @@ q:before, q:after {
 table {
     border-collapse: collapse;
     border-spacing: 0;
+}
+
+@layer components {
+    .dropShadow {
+        box-shadow: -1vh 2vh 3vh rgba(0, 0, 0, 0.4);
+    }
+
+    .flippedShadow {
+        box-shadow: -1vh -2vh 3vh rgba(0, 0, 0, 0.4);
+    }
+
+    .shadowStroke {
+        box-shadow: -1vh 2vh 3vh rgba(0, 0, 0, 0.4), 0 0 0 0.15vh white;
+    }
+
+    .landingCard {
+    }
+
+    .landingCard:hover {
+    }
 }

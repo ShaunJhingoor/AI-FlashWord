@@ -1,7 +1,15 @@
 "use client";
 import { useState } from "react";
-import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
-import {auth} from "../../firebase/config"
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  GoogleAuthProvider,
+} from "firebase/auth";
+import Image from "next/image";
+import { auth } from "../../firebase/config";
 
 function LoginPage({ onClose }) {
   const [email, setEmail] = useState("");
@@ -33,56 +41,98 @@ function LoginPage({ onClose }) {
   };
 
   const handlePasswordReset = () => {
-    const email = prompt('Please Enter Email');
+    const email = prompt("Please Enter Email");
     sendPasswordResetEmail(auth, email);
-    alert('Email sent. Check inbox for password reset');
+    alert("Email sent. Check inbox for password reset");
   };
 
   return (
-    <div className="relative bg-white p-8 rounded-lg shadow-lg">
-      <button className="absolute top-2 right-2 text-red-500 text-2xl cursor-pointer hover:text-red-600 hover:scale-110 transition ease-in-out" onClick={onClose}>
-        X
-      </button>
-      <h2 className="text-3xl mb-6 text-center">Login</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col justify-center">
-        <div className="mb-4">
-          <label htmlFor="email" className="block mb-2">Email:</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => { setEmail(e.target.value); setError(""); }}
-            required
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="password" className="block mb-2">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setError(""); }}
-            required
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        {error && (
-          <div className="text-red-600 mb-4">
-            {error}
+    <div className="relative bg-gradient-to-b from-[#111111] to-[#323232] shadowStroke dropShadow w-[60vh] flex flex-col justify-center items-center gap-[4vh] py-[2vh] rounded-[5vh]">
+      <h2 className="text-[5vh] text-center text-white">Login</h2>
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col justify-around w-full gap-[4vh]"
+      >
+        <div className="flex justify-around gap-[4vh] px-[4vh]">
+          <div className="flex flex-col gap-[2vh] w-1/2">
+            <div className="flex flex-col gap-[1vh]">
+              <label
+                htmlFor="email"
+                className="block lowercase text-white text-[2vh]"
+              >
+                Email:
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                placeholder="your email"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                required
+                className="w-full rounded-[5vh] pl-[1.5vh] py-[0.5vh] text-[2vh]"
+              />
+            </div>
+            <div className="flex flex-col gap-[1vh] ">
+              <label htmlFor="password" className="block text-white text-[2vh] lowercase">
+                Password:
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                placeholder="your password"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
+                required
+                className="w-full rounded-[5vh] pl-[1.5vh] py-[0.5vh] text-[2vh] "
+              />
+              {error ? (
+                <div className="text-red-600">{error}</div>
+              ) : (
+                <div className="opacity-1 opacity-0">
+                  hiii this is hiddennnn hiii
+                </div>
+              )}
+            </div>
           </div>
-        )}
-        <div className="flex flex-col items-center mb-4">
-          <button type="submit" className="bg-green-500 text-white w-32 py-2 rounded mb-2 hover:bg-green-600 transition ease-in-out">
+          <div className="flex flex-col items-start w-1/2 gap-[1vh]">
+            <label
+              htmlFor="gmail"
+              className="block text-white text-[2vh] lowercase"
+            >
+              or login with:
+            </label>
+            <button onClick={handleGoogle} className="">
+              <Image
+                width={100}
+                height={100}
+                className="w-[4vh]"
+                src="/gmail.png"
+                alt=""
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-center items-center w-full m-auto gap-[1vh]">
+          <button
+            type="submit"
+            className="bg-[#FFFFFF] text-[3vh] font-semibold px-[2vh] py-[1vh] lowercase text-[#121212] rounded-full hover:bg-[#383838] transition ease-in-out"
+          >
             Submit
           </button>
-          <button onClick={handleGoogle} className="bg-blue-500 text-white w-32 py-2 rounded flex items-center justify-center hover:bg-blue-600 transition ease-in-out">
-            <i className="fab fa-google mr-2"></i> Sign in with Google
-          </button>
+          <p
+            className="text-center text-white text-sm cursor-pointer underline hover:text-[#121212] transition ease-in-out"
+            onClick={handlePasswordReset}
+          >
+            Forgot Password
+          </p>
         </div>
-        <p className="text-center text-blue-600 text-sm cursor-pointer underline hover:text-blue-700 transition ease-in-out" onClick={handlePasswordReset}>
-          Forgot Password
-        </p>
       </form>
     </div>
   );

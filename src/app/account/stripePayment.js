@@ -34,7 +34,7 @@ export const getCheckoutUrl = async (priceId, currentUserId) => {
 }
 
 export const getPortalUrl = async (user) => {
-    const userId = user?.currentUse?.id;
+    const userId = user?.currentUser?.id;
   
     let dataWithUrl;
     try {
