@@ -21,24 +21,36 @@ export async function POST(req) {
       }
     `;
 
-    // Send the prompt to OpenAI
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: deckContent } // User's deck content
-      ],
-      model: "gpt-3.5-turbo"
+    // Use a ReadableStream to stream data to the client
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Start streaming the response from OpenAI
+          const completion = await openai.chat.completions.create({
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: deckContent } // User's deck content
+            ],
+            model: "gpt-3.5-turbo",
+            stream: true,  // Enable streaming
+          });
+
+          // Read chunks from the OpenAI stream and send them to the client
+          for await (const chunk of completion) {
+            const text = chunk.choices[0]?.delta?.content || '';  // Extract chunked content
+            controller.enqueue(new TextEncoder().encode(text));   // Send chunk to client
+          }
+          
+
+          controller.close();
+        } catch (error) {
+          controller.error(error);  
+        }
+      }
     });
 
-    // Check if the response is valid and parse it correctly
-    let flashcards;
-    try {
-      flashcards = JSON.parse(completion.choices[0].message.content);
-    } catch (error) {
-      throw new Error("Invalid JSON response from OpenAI.");
-    }
 
-    return NextResponse.json(flashcards.flashcards);
+    return new NextResponse(stream);
   } catch (error) {
     console.error('Error generating flashcards:', error);
     return NextResponse.json({ error: 'Failed to generate flashcards' }, { status: 500 });

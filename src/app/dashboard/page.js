@@ -310,11 +310,11 @@ const DecksPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (requestNumber <= 0) {
+      handlePrompt();
+      return;
+    }
     try {
-      if (requestNumber <= 0) {
-        handlePrompt();
-        return;
-      }
       const validNumberCards = isNaN(numberCards)
         ? 10
         : numberCards < 1
@@ -322,12 +322,12 @@ const DecksPage = () => {
         : numberCards > 40
         ? 40
         : numberCards;
-
+  
       const requestBody = {
         deckContent,
         numberCards: parseInt(validNumberCards),
       };
-
+  
       const response = await fetch("api/generate", {
         method: "POST",
         headers: {
@@ -335,28 +335,45 @@ const DecksPage = () => {
         },
         body: JSON.stringify(requestBody),
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch flashcards.");
       }
-
-      const data = await response.json();
-
-      if (
-        Array.isArray(data) &&
-        data.every((card) => card.question && card.answer)
-      ) {
-        await addFlashcardDeck(deckName, JSON.stringify(data));
+  
+      // Read the response stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = "";
+  
+      // Loop through each chunk of the streamed response
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+  
+        // Decode the chunk and accumulate it
+        const chunkText = decoder.decode(value, { stream: true });
+        accumulatedText += chunkText;
+  
+      }
+      
+      // Process accumulated text (JSON) after all chunks are received
+      const flashcards = JSON.parse(accumulatedText);
+      if (Array.isArray(flashcards.flashcards) && flashcards.flashcards.every(card => card.question && card.answer)) {
+      
+        await addFlashcardDeck(deckName, JSON.stringify(flashcards.flashcards));
       } else {
         alert("Invalid flashcards format received.");
       }
+  
     } catch (error) {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
     }
+  
     setNumberOfCards(10);
     setDeckName("");
   };
+  
 
   const handleFileChange = (e) => {
     e.preventDefault();
@@ -365,7 +382,7 @@ const DecksPage = () => {
       setFile(selectedFile);
       setFileName(selectedFile.name.split(".pdf")[0]);
     }
-    // console.log(selectedFile)
+
   };
 
   const extractTextFromPDF = async (pdf) => {
@@ -433,7 +450,7 @@ const DecksPage = () => {
       return;
     }
     try {
-      let deckContent = extractedText;
+      const deckContent = extractedText;
       const validNumberCards = isNaN(numberCardPDF)
         ? 10
         : numberCardPDF < 1
@@ -441,54 +458,68 @@ const DecksPage = () => {
         : numberCardPDF > 40
         ? 40
         : numberCardPDF;
-
+  
       const requestBody = {
         deckContent,
         numberCards: parseInt(validNumberCards),
       };
+  
 
-      console.log(requestBody);
-
+  
       const response = await fetch("api/generate", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(requestBody),
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch flashcards.");
       }
-
-      const data = await response.json();
-      console.log(`data: ${data}`);
-
+  
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = "";
+  
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        accumulatedText += decoder.decode(value, { stream: true });
+      }
+  
+      const flashcards = JSON.parse(accumulatedText.trim());
+  
       if (
-        Array.isArray(data) &&
-        data.every((card) => card.question && card.answer)
+        Array.isArray(flashcards.flashcards) &&
+        flashcards.flashcards.every((card) => card.question && card.answer)
       ) {
-        await addFlashcardDeck(fileName, JSON.stringify(data));
+        await addFlashcardDeck(fileName, JSON.stringify(flashcards.flashcards));
       } else {
         alert("Invalid flashcards format received.");
       }
     } catch (error) {
-      console.error("Error handling submit:", error);
+      console.error("Error handling file submit:", error);
       alert("Failed to generate or add flashcards.");
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      setExtractedText("");
+      setFileName("");
+      setFile(null);
+      setNumberOfCardPDF(10);
     }
-    setExtractedText("");
-    setFileName("");
-    setFile(null);
-    setNumberOfCardPDF(10);
   };
+  
+  
 
   const handleUpgradeToPremium = async () => {
     const priceId = "price_1Pnnf7DM3EY2E0WOjkZvgNbV";
     try {
       const checkoutUrl = await getCheckoutUrl(priceId, currentUser?.currentUser.id);
       // Redirect to Stripe Checkout
-      console.log(checkoutUrl)
       router.push(checkoutUrl);
     } catch (error) {
       console.error("Error upgrading to premium:", error);
