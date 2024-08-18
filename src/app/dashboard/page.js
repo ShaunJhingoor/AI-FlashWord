@@ -4,8 +4,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Container,
-  Typography,
   Button,
   TextField,
   IconButton,
@@ -14,7 +12,7 @@ import {
   DialogContent,
   DialogTitle,
   Box,
-  Grid,
+  CircularProgress
 } from "@mui/material";
 import {
   collection,
@@ -29,8 +27,6 @@ import { firestore } from "../../firebase/config";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/userSlice";
 import { getCheckoutUrl, getPortalUrl } from "../account/stripePayment";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
@@ -59,6 +55,7 @@ const DecksPage = () => {
   const [requestNumber, setRequestNumber] = useState(5);
   const [numberCards, setNumberOfCards] = useState(10);
   const [numberCardPDF, setNumberOfCardPDF] = useState(10);
+  const [loading, setLoading] = useState()
   const fileInputRef = useRef(null);
   const currentUser = useSelector(selectUser);
 
@@ -314,6 +311,7 @@ const DecksPage = () => {
       handlePrompt();
       return;
     }
+    setLoading(true)
     try {
       const validNumberCards = isNaN(numberCards)
         ? 10
@@ -369,7 +367,7 @@ const DecksPage = () => {
       console.error("Error handling submit:", error);
       alert("Failed to generate or add flashcards.");
     }
-  
+    setLoading(false)
     setNumberOfCards(10);
     setDeckName("");
   };
@@ -402,6 +400,7 @@ const DecksPage = () => {
   const handleFileSubmit = async (e) => {
     e.preventDefault();
     if (file) {
+      setLoading(true)
       try {
         if (requestNumber <= 0) {
           handlePrompt();
@@ -506,6 +505,7 @@ const DecksPage = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      setLoading(false)
       setExtractedText("");
       setFileName("");
       setFile(null);
@@ -528,6 +528,24 @@ const DecksPage = () => {
 
   return (
     <>
+      {loading && (
+        <Box
+        position="fixed"
+        top="0"
+        left="0"
+        width="100vw"
+        height="100vh"
+        bgcolor="rgba(0, 0, 0, 0.8)" // Greyed-out background
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        >
+          <CircularProgress 
+           size={100}
+           thickness={5} 
+           sx={{ color: "white" }}/>
+        </Box>
+      )}
       <div className="w-full m-auto flex flex-col justify-center items-center gap-[4vh] pt-[4vh]">
         <h1 className="capitalize text-[#989898] font-light text-[4vh]">
           generate flashcards
@@ -667,7 +685,7 @@ const DecksPage = () => {
             key={deck.id}
             className="cursor-pointer flex flex-col gap-[2vh] shadowStroke justify-center items-center bg-gradient-to-b from-[#111111] to-[#323232] h-[40vh] rounded-[4vh]"
           >
-            <h1 className="text-[5vh] text-white font-semibold cursor-pointer">
+            <h1 className="text-[5vh] text-white font-semibold text-center cursor-pointer">
               {deck.id}
             </h1>
             <div className="flex gap-[2vh] px-[5vh]">
@@ -684,6 +702,7 @@ const DecksPage = () => {
                   e.stopPropagation();
                   handleDelete(deck.id);
                 }}
+                className="bg-gray-500 p-2 rounded-full hover:bg-gray-600 transition duration-300"
               >
                 <img src="/delete.png"></img>
               </button>
