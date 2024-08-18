@@ -13,7 +13,7 @@ function Landing() {
 
   const landingCard = [
     {
-      answer: "Geroge Washington.",
+      answer: "George Washington.",
       question: "who is the first president of America?",
     },
     {
