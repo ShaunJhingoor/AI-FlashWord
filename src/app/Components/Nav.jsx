@@ -61,7 +61,7 @@ function Nav({ user }) {
 // make component
 
   const handleUpgradeToPremium = async () => {
-    const priceId = "price_1Pnnf7DM3EY2E0WOjkZvgNbV";
+    const priceId = "price_1PpCrDDM3EY2E0WOio9XAOIY";
     try {
       const checkoutUrl = await getCheckoutUrl(priceId, user?.currentUser.id);
       // Redirect to Stripe Checkout
