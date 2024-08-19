@@ -25,6 +25,7 @@ import { firestore } from "../../firebase/config";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/userSlice";
 import { getCheckoutUrl, getPortalUrl } from "../account/stripePayment";
+import QuizIcon from '@mui/icons-material/Quiz';
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
@@ -754,15 +755,15 @@ const DecksPage = () => {
               >
                 <img src="/delete.png"></img>
               </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCreateTest(e, deck);
-                }}
-                className="bg-blue-500 p-2 rounded-full hover:bg-blue-600 transition duration-300"
-              >
-                Take Quiz
-              </button>
+              <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCreateTest(e, deck);
+              }}
+              className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 transition duration-300"
+            >
+              <QuizIcon sx={{ color: 'white' }} />
+            </IconButton>
             </div>
             
           </div>
@@ -771,8 +772,7 @@ const DecksPage = () => {
       {isQuizOpen && quizDeck && (
         <Quiz
           questions={quizDeck.Questions}
-          onAnswer={handleAnswer}
-          currentQuestionIndex={currentQuestionIndex}
+          onClose={() => setIsQuizOpen(false)}
         />
       )}
 
