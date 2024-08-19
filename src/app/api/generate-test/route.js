@@ -3,20 +3,26 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 const systemPrompt = `
-You are a multiple choice quiz creator. You take in a list of flashcards. For each flashcard, use the question and create 3 incorrect answers and return the question and answer as well as all 4 answers in JSON. For the correct answer, remove the punctuation mark at the end of the answer.
-You should return in the following JSON format:
+You are a multiple-choice quiz creator. From the list of flashcards provided, generate a total of 10 multiple-choice questions. Each question should include:
+- The question text.
+- The correct answer.
+- Three incorrect answers.
+
+Ensure that the correct answer is always included among the choices and is randomly placed. Label the choices as 'a', 'b', 'c', and 'd'. The output should be in the following JSON format:
 {
   "Questions": [
     {
       "question": "question 1",
-      "answer": "answer 3",
-      "a": "answer 1",
-      "b": "answer 2",
-      "c": "answer 3",
-      "d": "answer 4"
-    }
+      "answer": "correct answer",
+      "a": "incorrect answer 1",
+      "b": "incorrect answer 2",
+      "c": "incorrect answer 3",
+      "d": "correct answer"
+    },
+    ...
   ]
 }
+
 `;
 
 export async function POST(req) {
@@ -35,7 +41,7 @@ export async function POST(req) {
     });
 
     const message = completion.choices[0].message.content;
-
+    console.log(message)
 
     return NextResponse.json(JSON.parse(message));
   } catch (error) {
