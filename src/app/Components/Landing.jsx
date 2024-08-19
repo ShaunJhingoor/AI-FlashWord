@@ -39,7 +39,7 @@ function Landing() {
     "Save an unlimited amount of decks",
     "Hold up to 40 cards in each deck",
     "Generate flashcards with description or pdf",
-    // "Generate multiple choice test quizzes up to 20 questions",
+    "Generate multiple choice tests",
     // "Share/import decks with other users",
     // "3 one time use premium free trial code for 2 weeks",
   ]

@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   Button,
@@ -27,6 +25,7 @@ import { firestore } from "../../firebase/config";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/userSlice";
 import { getCheckoutUrl, getPortalUrl } from "../account/stripePayment";
+import QuizIcon from '@mui/icons-material/Quiz';
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
@@ -34,6 +33,7 @@ import { useRouter } from "next/navigation";
 
 // import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
 import { getPremiumStatus } from "../account/PremiumStatus";
+import Quiz from "../Components/Quiz"
 
 const DecksPage = () => {
   const router = useRouter();
@@ -55,7 +55,11 @@ const DecksPage = () => {
   const [requestNumber, setRequestNumber] = useState(5);
   const [numberCards, setNumberOfCards] = useState(10);
   const [numberCardPDF, setNumberOfCardPDF] = useState(10);
-  const [loading, setLoading] = useState()
+  const [loading, setLoading] = useState(false)
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [quizDeck, setQuizDeck] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [userAnswers, setUserAnswers] = useState([]);
   const fileInputRef = useRef(null);
   const currentUser = useSelector(selectUser);
 
@@ -72,7 +76,7 @@ const DecksPage = () => {
     "Save an unlimited amount of decks",
     "Hold up to 40 cards in each deck",
     "Generate flashcards with description or pdf",
-    // "Generate multiple choice test quizzes up to 20 questions",
+    "Generate multiple choice tests"
     // "Share/import decks with other users",
     // "3 one time use premium free trial code for 2 weeks",
   ];
@@ -525,7 +529,51 @@ const DecksPage = () => {
       console.error("Error upgrading to premium:", error);
     }
   };
+  
+  const handleCreateTest = async (e, deck) => {
+    e.preventDefault();
 
+    try {
+      setLoading(true);
+      const res = await fetch("/api/generate-test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(deck.content)
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to create test");
+      }
+
+      const data = await res.json();
+    
+      
+      // Open the quiz dialog with the generated test data
+      setQuizDeck(data);
+      setIsQuizOpen(true);
+      setCurrentQuestionIndex(0);
+      setUserAnswers([]);
+
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAnswer = (answer) => {
+    const newAnswers = [...userAnswers, answer];
+    setUserAnswers(newAnswers);
+
+    if (currentQuestionIndex < quizDeck.Questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      alert('Quiz completed!');
+      setIsQuizOpen(false);
+    }
+  };
   return (
     <>
       {loading && (
@@ -688,28 +736,50 @@ const DecksPage = () => {
             <h1 className="text-[5vh] text-white font-semibold text-center cursor-pointer">
               {deck.id}
             </h1>
-            <div className="flex gap-[2vh] px-[5vh]">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(deck);
-                }}
-              >
-                <img src="/edit.png"></img>
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(deck.id);
-                }}
-                className="bg-gray-500 p-2 rounded-full hover:bg-gray-600 transition duration-300"
-              >
-                <img src="/delete.png"></img>
-              </button>
+            <div className="flex flex-col gap-[2vh] px-[5vh]">
+              <div className="flex gap-[2vh]">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(deck);
+                  }}
+                >
+                  <img src="/edit.png" alt="Edit" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(deck.id);
+                  }}
+                  className="bg-gray-500 p-2 rounded-full hover:bg-gray-600 transition duration-300"
+                >
+                  <img src="/delete.png" alt="Delete" />
+                </button>
+              </div>
+              {status && (
+              <div className="flex justify-center">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateTest(e, deck);
+                  }}
+                  className="p-3 rounded-full bg-blue-500 hover:bg-blue-600 transition duration-300"
+                >
+                  <QuizIcon sx={{ color: 'white', fontSize: '2.5rem' }} />
+                </IconButton>
+              </div>
+              )}
             </div>
           </div>
         ))}
       </div>
+      
+      {isQuizOpen && quizDeck && (
+        <Quiz
+          questions={quizDeck.Questions}
+          onClose={() => setIsQuizOpen(false)}
+        />
+      )}
 
       <div className="flex justify-around w-full bottom-0 z-0 pt-[8vh]">
         <div className="bg-gradient-to-t from-[#D9D9D9] to-[#ffffff] rounded-t-[4vh] flex flex-col w-[60vh] p-[4vh] gap-[2vh] dropShadow">

@@ -52,7 +52,6 @@ function Nav({ user }) {
   };
 
   const checkAndResetPremiumStatus = async (userId) => {
-    console.log(status);
     if (status == "Premium") {
       await resetRequestNumber(userId);
     }
