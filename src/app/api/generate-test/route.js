@@ -41,7 +41,7 @@ export async function POST(req) {
     });
 
     const message = completion.choices[0].message.content;
-    console.log(message)
+  
 
     return NextResponse.json(JSON.parse(message));
   } catch (error) {

@@ -6,7 +6,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 const Quiz = ({ questions, onClose }) => {
   const [userAnswers, setUserAnswers] = useState(Array(questions.length).fill(''));
   const [showResults, setShowResults] = useState(false);
-    console.log(questions)
+
   const handleAnswerChange = (questionIndex, answer) => {
     const updatedAnswers = [...userAnswers];
     updatedAnswers[questionIndex] = answer;
@@ -50,7 +50,7 @@ const Quiz = ({ questions, onClose }) => {
             <Box>
               {questions.map((question, index) => {
                 const options = [question.a, question.b, question.c, question.d];
-                console.log(question)
+       
                 return (
                   <Box key={index} sx={{ marginBottom: 3 }}>
                     <Typography variant="h6" sx={{ marginBottom: 2 }}>
@@ -93,7 +93,7 @@ const Quiz = ({ questions, onClose }) => {
                 {questions.map((question, index) => {
                   const options = [question.a, question.b, question.c, question.d];
                   const correctOption = question?.answer;
-                  console.log(question)
+
 
                   return (
                     <Box key={index} sx={{ marginBottom: 2 }}>
