@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   Button,
@@ -34,6 +32,7 @@ import { useRouter } from "next/navigation";
 
 // import * as pdfjsLib from "pdfjs-dist/webpack.mjs";
 import { getPremiumStatus } from "../account/PremiumStatus";
+import Quiz from "../Components/Quiz"
 
 const DecksPage = () => {
   const router = useRouter();
@@ -55,7 +54,11 @@ const DecksPage = () => {
   const [requestNumber, setRequestNumber] = useState(5);
   const [numberCards, setNumberOfCards] = useState(10);
   const [numberCardPDF, setNumberOfCardPDF] = useState(10);
-  const [loading, setLoading] = useState()
+  const [loading, setLoading] = useState(false)
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [quizDeck, setQuizDeck] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [userAnswers, setUserAnswers] = useState([]);
   const fileInputRef = useRef(null);
   const currentUser = useSelector(selectUser);
 
@@ -525,7 +528,52 @@ const DecksPage = () => {
       console.error("Error upgrading to premium:", error);
     }
   };
+  
+  const handleCreateTest = async (e, deck) => {
+    e.preventDefault();
+    console.log("Deck content:", deck.content);
 
+    try {
+      setLoading(true);
+      const res = await fetch("/api/generate-test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(deck.content)
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to create test");
+      }
+
+      const data = await res.json();
+      console.log("Generated test:", data);
+      
+      // Open the quiz dialog with the generated test data
+      setQuizDeck(data);
+      setIsQuizOpen(true);
+      setCurrentQuestionIndex(0);
+      setUserAnswers([]);
+
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAnswer = (answer) => {
+    const newAnswers = [...userAnswers, answer];
+    setUserAnswers(newAnswers);
+
+    if (currentQuestionIndex < quizDeck.Questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      alert('Quiz completed!');
+      setIsQuizOpen(false);
+    }
+  };
   return (
     <>
       {loading && (
@@ -706,10 +754,27 @@ const DecksPage = () => {
               >
                 <img src="/delete.png"></img>
               </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCreateTest(e, deck);
+                }}
+                className="bg-blue-500 p-2 rounded-full hover:bg-blue-600 transition duration-300"
+              >
+                Take Quiz
+              </button>
             </div>
+            
           </div>
         ))}
       </div>
+      {isQuizOpen && quizDeck && (
+        <Quiz
+          questions={quizDeck.Questions}
+          onAnswer={handleAnswer}
+          currentQuestionIndex={currentQuestionIndex}
+        />
+      )}
 
       <div className="flex justify-around w-full bottom-0 z-0 pt-[8vh]">
         <div className="bg-gradient-to-t from-[#D9D9D9] to-[#ffffff] rounded-t-[4vh] flex flex-col w-[60vh] p-[4vh] gap-[2vh] dropShadow">
