@@ -23,7 +23,7 @@ export async function POST(req) {
   const openai = new OpenAI();
   const data = await req.text();
 
-  console.log('Data in request:', data);
+
 
   try {
     const completion = await openai.chat.completions.create({
@@ -35,7 +35,7 @@ export async function POST(req) {
     });
 
     const message = completion.choices[0].message.content;
-    console.log('Completion:', message);
+
 
     return NextResponse.json(JSON.parse(message));
   } catch (error) {

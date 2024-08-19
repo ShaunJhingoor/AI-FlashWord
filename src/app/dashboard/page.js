@@ -76,7 +76,7 @@ const DecksPage = () => {
     "Save an unlimited amount of decks",
     "Hold up to 40 cards in each deck",
     "Generate flashcards with description or pdf",
-    // "Generate multiple choice test quizzes up to 20 questions",
+    "Generate multiple choice tests"
     // "Share/import decks with other users",
     // "3 one time use premium free trial code for 2 weeks",
   ];
@@ -532,7 +532,6 @@ const DecksPage = () => {
   
   const handleCreateTest = async (e, deck) => {
     e.preventDefault();
-    console.log("Deck content:", deck.content);
 
     try {
       setLoading(true);
@@ -549,7 +548,7 @@ const DecksPage = () => {
       }
 
       const data = await res.json();
-      console.log("Generated test:", data);
+    
       
       // Open the quiz dialog with the generated test data
       setQuizDeck(data);
@@ -737,38 +736,44 @@ const DecksPage = () => {
             <h1 className="text-[5vh] text-white font-semibold text-center cursor-pointer">
               {deck.id}
             </h1>
-            <div className="flex gap-[2vh] px-[5vh]">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(deck);
-                }}
-              >
-                <img src="/edit.png"></img>
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(deck.id);
-                }}
-                className="bg-gray-500 p-2 rounded-full hover:bg-gray-600 transition duration-300"
-              >
-                <img src="/delete.png"></img>
-              </button>
-              <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCreateTest(e, deck);
-              }}
-              className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 transition duration-300"
-            >
-              <QuizIcon sx={{ color: 'white' }} />
-            </IconButton>
+            <div className="flex flex-col gap-[2vh] px-[5vh]">
+              <div className="flex gap-[2vh]">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(deck);
+                  }}
+                >
+                  <img src="/edit.png" alt="Edit" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(deck.id);
+                  }}
+                  className="bg-gray-500 p-2 rounded-full hover:bg-gray-600 transition duration-300"
+                >
+                  <img src="/delete.png" alt="Delete" />
+                </button>
+              </div>
+              {status && (
+              <div className="flex justify-center">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateTest(e, deck);
+                  }}
+                  className="p-3 rounded-full bg-blue-500 hover:bg-blue-600 transition duration-300"
+                >
+                  <QuizIcon sx={{ color: 'white', fontSize: '2.5rem' }} />
+                </IconButton>
+              </div>
+              )}
             </div>
-            
           </div>
         ))}
       </div>
+      
       {isQuizOpen && quizDeck && (
         <Quiz
           questions={quizDeck.Questions}

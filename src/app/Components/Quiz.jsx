@@ -14,6 +14,12 @@ const Quiz = ({ questions, onClose }) => {
   };
 
   const handleSubmit = () => {
+
+    const allAnswered = userAnswers.every(answer => answer !== '');
+    if (!allAnswered) {
+      alert('Please answer all questions before submitting.');
+      return;
+    }
     setShowResults(true);
   };
 
