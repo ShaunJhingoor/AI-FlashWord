@@ -11,6 +11,8 @@ Our project blends cutting-edge technology with education, providing an enhanced
 
 ### Check out the live site:
 
-[Visit AI FlashWord](https://ai-flash-word.vercel.app/) 
+<a href="https://ai-flash-word.vercel.app/" target="_blank" rel="noopener noreferrer">Visit AI FlashWord</a>
+
+
 
 
